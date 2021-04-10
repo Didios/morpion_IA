@@ -181,7 +181,14 @@ def morpion_IA(fois = 1, aleatoire = True):
         dico = {}
         for ligne in lecture:
             ligne = ligne.split(":")
-            dico[ligne[0]] = ligne[1].split(",")
+            l = ligne[1].split(",")
+            """
+            lors de la construction de l'arbre, des éléments se répètent
+            """
+            dico[ligne[0]] = []
+            for elmt in l:
+                if elmt != ligne[0]:
+                    dico[ligne[0]] += [elmt]
 
         def creation_arbre(dico, racine):
             ABR = arbre(racine)
@@ -273,6 +280,7 @@ def morpion_IA(fois = 1, aleatoire = True):
                 """
 
                 if choix[1] < 0 and len(reflexion.get_fils()) < compter_pos(situation):
+                    # on joue de manière aléatoire
                     from random import randint
 
                     placer = False
@@ -288,9 +296,12 @@ def morpion_IA(fois = 1, aleatoire = True):
                         if plateau[x][y] == "_" and situation not in [x.get_racine() for x in reflexion.get_fils()]:
                             placer = True
 
+                    # on ajoute cette situation au cerveau puisqu'elle n'existe pas encore
+
                     fils = arbre(situation)
 
                     reflexion.add_fils(fils)
+                    # on déplace la reflexion dans cette branche puisque c'est celle actuelle
                     reflexion = fils
                     """
                     tant que x, y pas possible:
@@ -306,9 +317,6 @@ def morpion_IA(fois = 1, aleatoire = True):
 
                     situation = convertion_chaine(choix[0])
 
-                    print(situation)
-                    print(plateau)
-                    print("###################################################")
                     x = 0
                     while situation[x] == plateau[x]:
                         x += 1
@@ -420,6 +428,7 @@ def morpion_IA(fois = 1, aleatoire = True):
         # enregistrement du nouvel arbre
 
         # on transforme l'arbre en dictionnaire
+        """
         def creation_dico(ABR):
             dico = {}
             l = []
@@ -433,7 +442,24 @@ def morpion_IA(fois = 1, aleatoire = True):
                     l += [fils]
             dico[ABR.get_racine()] = l
             return dico
-
+        """
+        def creation_dico(ABR):
+            dico = {}
+            l = []
+            for fils in ABR.get_fils():
+                try:
+                    if fils.est_feuille():
+                        l += [fils.get_racine()]
+                    else:
+                        l += [fils.get_racine()]
+                        """
+                        changer si fils deja dans l et -1 1 0 pas dans l
+                        """
+                        dico.update(creation_dico(fils))
+                except:
+                    l += [fils]
+            dico[ABR.get_racine()] = l
+            return dico
         dico = creation_dico(brain)
 
         ###----------------------------------------------------------------------###
@@ -442,7 +468,7 @@ def morpion_IA(fois = 1, aleatoire = True):
         on transforme le dictionnaire en un dictionnaire unique
             il faut faire attention s'il y a plusieurs clé identique => assembler les valeur
         """
-
+        """
         dico_unique = False
         while not dico_unique:
             nouv_dico = []
@@ -461,20 +487,26 @@ def morpion_IA(fois = 1, aleatoire = True):
                 sous_contenu = [*sous_dico.keys()]
                 for keys in sous_contenu:
                     if keys in dico.keys():
-                        dico[keys] = dico[keys] + sous_dico[keys]
+                        for elmt in sous_dico[keys]:
+                            if elmt not in dico[keys]:
+                                dico[keys] = dico[keys] + [elmt]
                     else:
                         dico[keys] = sous_dico[keys]
 
             # on vérifie si le dico est unique
             if nouv_dico == []:
                 dico_unique = True
-
+        """
         ###----------------------------------------------------------------------###
         # transformation du dictionnaire en chaine de caracteres
         contenu = ""
         for keys, values in dico.items():
             contenu += keys
             contenu += ":"
+            """
+            values contient un arbre == impossible:
+                PBM fonction arbre --> dictionnaire
+            """
             for indice in values:
                 contenu += str(indice) + ","
             contenu = contenu[:-1]
@@ -490,8 +522,17 @@ def morpion_IA(fois = 1, aleatoire = True):
             score["aleatoire"] += 1
         print(score)
 
+        """
+        il faut modifier le temps d'attente = creer une boucle  qui s'execute tant que le fichier n'est pas disponible
+        os.system('TheCommand')
+
+        il y a plusieurs fois le même nombre dans le dictionnaire
+        {cle : [cle, cle_1, ...]}
+        = ajouter verification, si pareil, pas ajouté
+        """
+
         import time
-        time.sleep(1)
+        time.sleep(10)
 
         read.suppr_fichier("cerveau.txt", False)
         read.add_fichier("", "cerveau.txt", contenu)
