@@ -445,21 +445,23 @@ def morpion_IA(fois = 1, aleatoire = True):
         """
         def creation_dico(ABR):
             dico = {}
-            l = []
+            dico[ABR.get_racine()] = []
             for fils in ABR.get_fils():
-                try:
-                    if fils.est_feuille():
-                        l += [fils.get_racine()]
-                    else:
-                        l += [fils.get_racine()]
-                        """
-                        changer si fils deja dans l et -1 1 0 pas dans l
-                        """
-                        dico.update(creation_dico(fils))
-                except:
-                    l += [fils]
-            dico[ABR.get_racine()] = l
+                print(fils.get_fils())
+                if fils.est_feuille():
+                    dico[ABR.get_racine()] += [fils.get_racine()]
+                else:
+                    nouv_dico = creation_dico(fils)
+                    for keys, values in nouv_dico.items():
+                        if keys in dico.keys():
+                            for each in values:
+                                if each not in dico[keys]:
+                                    dico[keys] += [each]
+                        else:
+                            dico[keys] = values
+                    dico[ABR.get_racine()] += [fils.get_racine()]
             return dico
+
         dico = creation_dico(brain)
 
         ###----------------------------------------------------------------------###
@@ -532,7 +534,7 @@ def morpion_IA(fois = 1, aleatoire = True):
         """
 
         import time
-        time.sleep(10)
+        time.sleep(5)
 
         read.suppr_fichier("cerveau.txt", False)
         read.add_fichier("", "cerveau.txt", contenu)
