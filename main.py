@@ -55,6 +55,27 @@ def minimax(node, maximizingPlayer, chemin = True):
     else:
         return nbr
 
+
+def negamax(node, color, chemin = True):
+    if chemin and node.est_feuille():
+        return ["", -1]
+    elif node.est_feuille():
+        return color * node.get_racine()
+    else:
+        sous_chemin = None
+        value = -999999999
+        for fils in node.get_fils():
+            v = -negamax(fils, -color, False)
+            if value < v:
+                value = v
+                sous_chemin = fils.get_racine()
+
+        if chemin:
+            return [sous_chemin, value]
+        else:
+            return value
+
+
 ################################################################################
 
 def morpion_humain(x = 3, y = 3):
@@ -447,7 +468,6 @@ def morpion_IA(fois = 1, aleatoire = True):
             dico = {}
             dico[ABR.get_racine()] = []
             for fils in ABR.get_fils():
-                print(fils.get_fils())
                 if fils.est_feuille():
                     dico[ABR.get_racine()] += [fils.get_racine()]
                 else:
@@ -538,3 +558,361 @@ def morpion_IA(fois = 1, aleatoire = True):
 
         read.suppr_fichier("cerveau.txt", False)
         read.add_fichier("", "cerveau.txt", contenu)
+
+
+
+
+
+
+
+
+
+def morpion_IA_2(fois = 1, aleatoire = True):
+    score = {}
+    score["IA"] = 0
+    score["aleatoire"] = 0
+    score["nul"] = 0
+
+
+    """
+    prevoir si le fichier a été supprimé
+    contenu de base:
+        000000000:
+    """
+    # on transforme le fichier en dictionnaire
+    lecture = read.lire_fichier("cerveau_2.txt")
+    dico = {}
+    for ligne in lecture:
+        ligne = ligne.split(":")
+        l = ligne[1].split(",")
+        """
+        lors de la construction de l'arbre, des éléments se répètent
+        """
+        dico[ligne[0]] = []
+        for elmt in l:
+            if elmt != ligne[0]:
+                dico[ligne[0]] += [elmt]
+
+    def creation_arbre(dico, racine):
+        ABR = arbre(racine)
+        if racine == "":
+            return None
+        for fils in dico[racine]:
+            """
+            repetitions des coups dans la chaine = bug de construction
+            """
+            if fils in ["-1", "0", "1"]:
+                ABR.add_fils(arbre(int(fils)))
+            else:
+                sous_arbre = creation_arbre(dico, fils)
+                if sous_arbre is not None:
+                    ABR.add_fils(sous_arbre)
+        return ABR
+
+    brain = creation_arbre(dico, "000000000") # cerveau en entier
+
+    reflexion = brain # zone de réfléxion
+    for p in range(fois):
+
+    ###--------------------------------------------------------------------------###
+
+        plateau = [
+        ["_", "_", "_"],
+        ["_", "_", "_"],
+        ["_", "_", "_"]
+        ]
+
+        fin = [False, "J1"] # sert à jouer en alternance et à arreter le jeu
+
+        while not fin[0]: # tant qu'on a pas fini
+
+            if fin[1] == "J1": # le joueur humain
+                if aleatoire:
+                    from random import randint
+
+                    placer = False
+                    while not placer:
+                        x = randint(0, 2)
+                        y = randint(0, 2)
+                        situation = plateau
+                        if plateau[x][y] == "_":
+                            placer = True
+                else:
+                    montrer_plateau(plateau)
+
+                    placer = False
+                    while not placer:
+                        lieu = input("A quelle place veut-tu jouer %s ? (de 1.1 à 3.3)" % fin[1])
+                        if "." in lieu:
+                            lieu = lieu.split(".")
+                            x = int(lieu[0]) -1
+                            y = int(lieu[1]) -1
+                            if x > -1 and x < 3 and y > -1 and y < 3:
+                                if plateau[x][y] == "_":
+                                    placer = True
+            ###------------------------------------------------------------------###
+            elif fin[1] == "IA": # joueur IA
+                situation = convertion_plateau(plateau)
+                scenarios = [x.get_racine() for x in reflexion.get_fils()]
+
+                if situation in scenarios:
+                    for fils in reflexion.get_fils():
+                        if fils.get_racine() == situation:
+                            reflexion = fils
+                            break
+                elif situation == reflexion.get_racine():
+                    pass
+                else:
+                    fils = arbre(situation)
+                    reflexion.add_fils(fils)
+                    reflexion = fils
+
+                choix = negamax(reflexion, -1)
+
+                """
+                MAJ de l'arbre:
+
+                    analyse situation
+                    si nouvelle situation:
+                        ajouter situation à l'arbre
+                        ajouter un fils à l'arbre avec comme nom None et valeur 0
+
+                    si la branche ou on est à déjà toutes les possibilitées de faites:
+                        on enlève le fils None
+
+                    reflexion devient la branche correspondante à situation
+                """
+
+                if choix[1] < 0 and len(reflexion.get_fils()) < compter_pos(situation):
+                    # on joue de manière aléatoire
+                    from random import randint
+
+                    placer = False
+                    while not placer:
+                        x = randint(0, 2)
+                        y = randint(0, 2)
+
+                        situation = convertion_chaine(convertion_plateau(plateau))
+                        situation[x][y] = "O"
+
+                        situation = convertion_plateau(situation)
+
+                        if plateau[x][y] == "_" and situation not in [x.get_racine() for x in reflexion.get_fils()]:
+                            placer = True
+
+                    # on ajoute cette situation au cerveau puisqu'elle n'existe pas encore
+
+                    fils = arbre(situation)
+
+                    reflexion.add_fils(fils)
+                    # on déplace la reflexion dans cette branche puisque c'est celle actuelle
+                    reflexion = fils
+                    """
+                    tant que x, y pas possible:
+                        x, y = random entre 0 et 2
+                    ajouter la nouvelle situation à reflexion
+                    aller à la situation
+                    """
+                else:
+                    for fils in reflexion.get_fils():
+                        if fils.get_racine() == choix[0]:
+                            reflexion = fils
+                            break
+
+                    situation = convertion_chaine(choix[0])
+
+                    x = 0
+                    while situation[x] == plateau[x]:
+                        x += 1
+
+                    y = 0
+                    while situation[x][y] == plateau[x][y]:
+                        y += 1
+                    # aller à choix[1]
+                    # determiner x, y
+                """
+                choix placement:
+                    faire minmax(reflexion, False) pour connaitre la branche à prendre
+                    si nom de la branche == "None":
+                        x, y = -1, -1
+                        tant que la position x y n'est pas possible ou que la situation correspondante est un fils de reflexion:
+                            choisir x y au pif
+                        ajouter la nouvelle situation à l'arbre
+                        aller à la branche
+                    sinon:
+                        aller à la branche
+                        prendre la racine de la branche
+                        comparer la racine à l'analyse
+                        donner le placement x y
+                """
+
+        ###----------------------------------------------------------------------###
+            # on place le pion au coordonnées selon le joueur
+            if fin[1] == "J1":
+                plateau[x][y] = "X"
+            elif fin[1] == "IA":
+                plateau[x][y] = "O"
+
+            # toutes les possibilité de gagner sont ici
+            ligne = False
+            i = 0
+            while i < 3 and not ligne:
+                if (y+i-2 > -1 and y+i-2 < 3) and (y+i > -1 and y+i < 3):
+                    ligne = plateau[x][y + i -2] == plateau[x][y + i -1] == plateau[x][y + i] # colonnes
+
+                if (x+i-2 > -1 and x+i-2 < 3) and (x+i > -1 and x+i < 3) and not ligne:
+                    ligne = plateau[x + i -2][y] == plateau[x + i -1][y] == plateau[x + i][y] # lignes
+
+                if (y+i-2 > -1 and y+i-2 < 3) and (y+i > -1 and y+i < 3) and (x+i-2 > -1 and x+i-2 < 3) and (x+i > -1 and x+i < 3) and not ligne:
+                    ligne = plateau[x + i -2][y + i -2] == plateau[x + i -1][y + i -1] == plateau[x + i][y + i] # diagonale \
+
+                if (y-i+2 > -1 and y-i+2 < 3) and (y-i > -1 and y-i < 3) and (x+i-2 > -1 and x+i-2 < 3) and (x+i > -1 and x+i < 3) and not ligne:
+                    ligne = plateau[x + i -2][y - i +2] == plateau[x + i -1][y - i +1] == plateau[x + i][y - i] # diagonale /
+                i += 1
+
+            plein = "_" not in plateau[0] + plateau[1] + plateau[2]
+
+            # on regarde si le joueur a gagné et si le plateau n'est pas plein
+            if ligne:
+                fin[0] = True
+            elif plein:
+                fin[0] = True
+                fin[1] = "0"
+            # on change de joueur sinon
+            elif fin[1] == "J1":
+                fin[1] = "IA"
+            else:
+                fin[1] = "J1"
+        ###----------------------------------------------------------------------###
+
+        montrer_plateau(plateau) # on montre le plateau de fin
+
+        situation = convertion_plateau(plateau)
+        scenarios = [x.get_racine() for x in reflexion.get_fils()]
+
+        if fin[1] == "IA":
+            if situation not in scenarios and situation != reflexion.get_racine():
+                fils = arbre(situation, arbre(1))
+            elif situation not in scenarios:
+                fils = arbre(1)
+        elif fin[1] == "J1":
+            if situation not in scenarios and situation != reflexion.get_racine():
+                fils = arbre(situation, arbre(-1))
+            elif situation not in scenarios:
+                fils = arbre(-1)
+        elif situation not in scenarios:
+            if situation != reflexion.get_racine():
+                fils = arbre(situation, arbre(0))
+            else:
+                fils = arbre(0)
+        reflexion.set_fils(fils)
+
+        # on indique le résultat de la partie
+        if fin[1] == "0":
+            score["nul"] += 1
+        elif fin[1] == "IA":
+            score["IA"] += 1
+        else:
+            score["aleatoire"] += 1
+        print(score)
+
+        """
+        probleme de recursivité
+        raison inconnue
+
+        probleme d'enregistrement de situation
+        """
+
+        reflexion = brain
+
+        import time
+        time.sleep(0.1)
+
+        """
+        analyse situation
+        si IA perdu:
+            si situation nouvelle:
+                créer situation avec comme fils -1
+            sinon:
+                aller à situation
+                prendre le fils et y enlever 1
+        sinon si IA gagné:
+            si situation nouvelle:
+                creer situation avec comme fils 1
+            sinon:
+                aller à situation
+                prendre le fils et y ajouter 1
+        sinon si situation nouvelle:
+                creer situation avec comme fils 0
+        """
+
+    ###------------------------------------------------------------------###
+
+    # enregistrement du nouvel arbre
+
+    # on transforme l'arbre en dictionnaire
+    """
+    def creation_dico(ABR):
+        dico = {}
+        l = []
+        for fils in ABR.get_fils():
+            try:
+                if fils.est_feuille():
+                    l += [fils.get_racine()]
+                else:
+                    l += [creation_dico(fils)]
+            except:
+                l += [fils]
+        dico[ABR.get_racine()] = l
+        return dico
+    """
+    def creation_dico(ABR):
+        dico = {}
+        dico[ABR.get_racine()] = []
+        for fils in ABR.get_fils():
+            if fils.est_feuille():
+                dico[ABR.get_racine()] += [fils.get_racine()]
+            else:
+                nouv_dico = creation_dico(fils)
+                for keys, values in nouv_dico.items():
+                    if keys in dico.keys():
+                        for each in values:
+                            if each not in dico[keys]:
+                                dico[keys] += [each]
+                    else:
+                        dico[keys] = values
+                dico[ABR.get_racine()] += [fils.get_racine()]
+        return dico
+
+    dico = creation_dico(brain)
+
+    ###----------------------------------------------------------------------###
+
+    ###----------------------------------------------------------------------###
+    # transformation du dictionnaire en chaine de caracteres
+    contenu = ""
+    for keys, values in dico.items():
+        contenu += keys
+        contenu += ":"
+        """
+        values contient un arbre == impossible:
+            PBM fonction arbre --> dictionnaire
+        """
+        for indice in values:
+            contenu += str(indice) + ","
+        contenu = contenu[:-1]
+        contenu += "\n"
+
+        ###----------------------------------------------------------------------###
+
+    """
+    il faut modifier le temps d'attente = creer une boucle  qui s'execute tant que le fichier n'est pas disponible
+    os.system('TheCommand')
+
+    il y a plusieurs fois le même nombre dans le dictionnaire
+    {cle : [cle, cle_1, ...]}
+    = ajouter verification, si pareil, pas ajouté
+    """
+
+    read.suppr_fichier("cerveau_2.txt", False)
+    read.add_fichier("", "cerveau_2.txt", contenu)
