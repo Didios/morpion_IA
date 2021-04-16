@@ -579,8 +579,12 @@ def morpion_IA_2(fois = 1, aleatoire = True):
     contenu de base:
         000000000:
     """
-    # on transforme le fichier en dictionnaire
+    if not read.fichier_existe("cerveau_2.txt"):
+        read.add_fichier("", "cerveau_2.txt", "000000000:")
+
     lecture = read.lire_fichier("cerveau_2.txt")
+
+    # on transforme le fichier en dictionnaire
     dico = {}
     for ligne in lecture:
         ligne = ligne.split(":")
@@ -626,18 +630,18 @@ def morpion_IA_2(fois = 1, aleatoire = True):
 
         while not fin[0]: # tant qu'on a pas fini
 
-            if fin[1] == "J1": # le joueur humain
-                if aleatoire:
+            if fin[1] == "J1": # le 1er joueur
+                if aleatoire: # le joueur aléatoire
                     from random import randint
 
                     placer = False
                     while not placer:
                         x = randint(0, 2)
                         y = randint(0, 2)
-                        situation = plateau
                         if plateau[x][y] == "_":
                             placer = True
-                else:
+
+                else: # le joueur humain
                     montrer_plateau(plateau)
 
                     placer = False
@@ -660,9 +664,7 @@ def morpion_IA_2(fois = 1, aleatoire = True):
                         if fils.get_racine() == situation:
                             reflexion = fils
                             break
-                elif situation == reflexion.get_racine():
-                    pass
-                else:
+                elif situation != reflexion.get_racine():
                     fils = arbre(situation)
                     reflexion.add_fils(fils)
                     reflexion = fils
@@ -684,6 +686,7 @@ def morpion_IA_2(fois = 1, aleatoire = True):
                 """
 
                 if choix[1] < 0 and len(reflexion.get_fils()) < compter_pos(situation):
+                    """
                     # on joue de manière aléatoire
                     from random import randint
 
@@ -708,11 +711,38 @@ def morpion_IA_2(fois = 1, aleatoire = True):
                     # on déplace la reflexion dans cette branche puisque c'est celle actuelle
                     reflexion = fils
                     """
+
+                    """
                     tant que x, y pas possible:
                         x, y = random entre 0 et 2
                     ajouter la nouvelle situation à reflexion
                     aller à la situation
+
+                    inutile de jouer aléatoirement, il suffit de prendre la premiere place libre que l'on n'as pas déjà fait
                     """
+                    scenarios = [x.get_racine() for x in reflexion.get_fils()]
+
+                    situation = convertion_plateau(plateau)
+                    i = 0
+                    while i < len(situation):
+                        if situation[i] == "0":
+                            s = situation
+                            s = s[:i] + "2" + s[i+1:]
+                            s = convertion_chaine(s)
+                            if s not in scenarios:
+                                break
+                        i += 1
+
+                    x = 0
+                    while i > 2:
+                        x += 1
+                        i -= 3
+                    y = i
+
+                    fils = arbre(s)
+                    reflexion.add_fils(fils)
+                    reflexion = fils # on déplace la reflexion dans cette branche puisque c'est celle actuelle
+
                 else:
                     for fils in reflexion.get_fils():
                         if fils.get_racine() == choix[0]:
