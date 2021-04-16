@@ -669,7 +669,8 @@ def morpion_IA_2(fois = 1, aleatoire = True):
                     reflexion.add_fils(fils)
                     reflexion = fils
 
-                choix = negamax(reflexion, -1)
+                # choix = negamax(reflexion, -1)
+                choix = minimax(reflexion, True)
 
                 """
                 MAJ de l'arbre:
@@ -683,7 +684,14 @@ def morpion_IA_2(fois = 1, aleatoire = True):
                         on enlève le fils None
 
                     reflexion devient la branche correspondante à situation
+
+                différents probleme existe:
+                    minimax et negamax entrainent une trop importante récursivité
+                    les actions de l'IA ne semble pas toujours logique quand on connait ses parties précédentes
                 """
+                print(choix)
+                print(choix[1] < 0)
+                print(len(reflexion.get_fils()) < compter_pos(situation))
 
                 if choix[1] < 0 and len(reflexion.get_fils()) < compter_pos(situation):
                     """
@@ -728,7 +736,6 @@ def morpion_IA_2(fois = 1, aleatoire = True):
                         if situation[i] == "0":
                             s = situation
                             s = s[:i] + "2" + s[i+1:]
-                            s = convertion_chaine(s)
                             if s not in scenarios:
                                 break
                         i += 1
@@ -758,6 +765,7 @@ def morpion_IA_2(fois = 1, aleatoire = True):
                     y = 0
                     while situation[x][y] == plateau[x][y]:
                         y += 1
+
                     # aller à choix[1]
                     # determiner x, y
                 """
@@ -820,6 +828,7 @@ def morpion_IA_2(fois = 1, aleatoire = True):
         situation = convertion_plateau(plateau)
         scenarios = [x.get_racine() for x in reflexion.get_fils()]
 
+        print(fin)
         if fin[1] == "IA":
             if situation not in scenarios and situation != reflexion.get_racine():
                 fils = arbre(situation, arbre(1))
