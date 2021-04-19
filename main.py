@@ -669,8 +669,8 @@ def morpion_IA_2(fois = 1, aleatoire = True):
                     reflexion.add_fils(fils)
                     reflexion = fils
 
-                # choix = negamax(reflexion, -1)
-                choix = minimax(reflexion, True)
+                choix = negamax(reflexion, 1)
+                # choix = minimax(reflexion, True)
 
                 """
                 MAJ de l'arbre:
@@ -689,9 +689,6 @@ def morpion_IA_2(fois = 1, aleatoire = True):
                     minimax et negamax entrainent une trop importante récursivité
                     les actions de l'IA ne semble pas toujours logique quand on connait ses parties précédentes
                 """
-                print(choix)
-                print(choix[1] < 0)
-                print(len(reflexion.get_fils()) < compter_pos(situation))
 
                 if choix[1] < 0 and len(reflexion.get_fils()) < compter_pos(situation):
                     """
@@ -828,23 +825,36 @@ def morpion_IA_2(fois = 1, aleatoire = True):
         situation = convertion_plateau(plateau)
         scenarios = [x.get_racine() for x in reflexion.get_fils()]
 
-        print(fin)
+        feuille = None
+
         if fin[1] == "IA":
             if situation not in scenarios and situation != reflexion.get_racine():
-                fils = arbre(situation, arbre(1))
+                feuille = arbre(situation, arbre(1))
             elif situation not in scenarios:
-                fils = arbre(1)
+                feuille = arbre(1)
         elif fin[1] == "J1":
             if situation not in scenarios and situation != reflexion.get_racine():
-                fils = arbre(situation, arbre(-1))
+                feuille = arbre(situation, arbre(-1))
             elif situation not in scenarios:
-                fils = arbre(-1)
+                feuille = arbre(-1)
         elif situation not in scenarios:
             if situation != reflexion.get_racine():
-                fils = arbre(situation, arbre(0))
+                feuille = arbre(situation, arbre(0))
             else:
-                fils = arbre(0)
-        reflexion.set_fils(fils)
+                feuille = arbre(0)
+
+        """
+        il faut changer le score si la situation a déjà été fait
+        """
+
+        if feuille != None:
+            reflexion.set_fils(feuille)
+
+        """
+        feuille = fils
+        fils était déjà utilisé avant ce qui fait que à cause de ce qui suit, l'arbre rebouclait sur lui même puisque reflexion = fils avant
+        l'abcense de else fait que des fois, il remet la feuille précédente au mauvais endroits, d'ou des résultat incohérents
+        """
 
         # on indique le résultat de la partie
         if fin[1] == "0":
