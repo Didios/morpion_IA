@@ -845,6 +845,11 @@ def morpion_IA_2(fois = 1, aleatoire = True):
 
         """
         il faut changer le score si la situation a déjà été fait
+        else:
+            aller à situation
+            prendre la valeur du fils
+            changer la valeur
+            remettre la nouvelle valeur
         """
 
         if feuille != None:
