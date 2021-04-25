@@ -31,6 +31,15 @@ def minimax(node, maximizingPlayer, chemin = True):
         for f in node.get_fils():
             if type(f) == arbre:
                 mmx = minimax(f, False, False)
+                """
+                comparez les mmx de deux fils en meme temps
+                1er mmx
+                for
+                    autre mmx
+
+                additionnez les 0, 1
+                tout additionnez
+                """
                 try:
                     if nbr < mmx:
                         nbr = mmx
@@ -42,6 +51,10 @@ def minimax(node, maximizingPlayer, chemin = True):
         for f in node.get_fils():
             if type(f) == arbre:
                 mmx = minimax(f, True, False)
+                """
+                additionnez les 0, -1
+                tout soustraire
+                """
                 try:
                     if nbr > mmx:
                         nbr = mmx
@@ -55,6 +68,38 @@ def minimax(node, maximizingPlayer, chemin = True):
     else:
         return nbr
 
+def minimax_probabilité(node, maximizingPlayer):
+    if node.est_feuille():
+        return ["", -1]
+
+    probabilite = {}
+    for fils in node.get_fils():
+        liste = liste_feuille(fils, maximizingPlayer)
+        nbr = 0
+        for i in liste:
+            nbr += i
+        probabilite[fils.get_racine()] = nbr
+
+    chemin = fils.get_racine()
+    maxi = probabilite[chemin]
+    for fils, nombre in probabilite.items():
+        if nombre > maxi:
+            maxi = nombre
+            chemin = fils
+
+    return [chemin, maxi]
+
+def liste_feuille(node, maximizingPlayer):
+    if node.est_feuille():
+        if maximizingPlayer:
+            return [-node.get_racine()]
+        else:
+            return [node.get_racine()]
+    else:
+        liste = []
+        for fils in node.get_fils():
+            liste += liste_feuille(fils, not maximizingPlayer)
+        return liste
 
 def negamax(node, color, chemin = True):
     if chemin and node.est_feuille():
@@ -74,7 +119,6 @@ def negamax(node, color, chemin = True):
             return [sous_chemin, value]
         else:
             return value
-
 
 ################################################################################
 
@@ -563,10 +607,6 @@ def morpion_IA(fois = 1, aleatoire = True):
 
 
 
-
-
-
-
 def morpion_IA_2(fois = 1, aleatoire = True):
     score = {}
     score["IA"] = 0
@@ -605,12 +645,13 @@ def morpion_IA_2(fois = 1, aleatoire = True):
             """
             repetitions des coups dans la chaine = bug de construction
             """
-            if fils in ["-1", "0", "1"]:
-                ABR.add_fils(arbre(int(fils)))
-            else:
+            try:
                 sous_arbre = creation_arbre(dico, fils)
                 if sous_arbre is not None:
                     ABR.add_fils(sous_arbre)
+            except:
+                ABR.add_fils(arbre(int(fils)))
+
         return ABR
 
     brain = creation_arbre(dico, "000000000") # cerveau en entier
@@ -670,8 +711,8 @@ def morpion_IA_2(fois = 1, aleatoire = True):
                     reflexion = fils
 
                 choix = negamax(reflexion, 1)
-                # choix = minimax(reflexion, True)
-
+                # choix = minimax(reflexion, False)
+                #choix = minimax_probabilité(reflexion, False)
                 """
                 MAJ de l'arbre:
 
@@ -854,6 +895,17 @@ def morpion_IA_2(fois = 1, aleatoire = True):
 
         if feuille != None:
             reflexion.set_fils(feuille)
+        else:
+            for fils in reflexion.get_fils():
+                if fils.get_racine() == situation:
+                    reflexion = fils
+                    break
+            valeur = reflexion.get_fils()[0].get_racine()
+            if valeur > 0:
+                reflexion.set_fils(arbre(valeur +1))
+            elif valeur < 0:
+                reflexion.set_fils(arbre(valeur -1))
+
 
         """
         feuille = fils
@@ -921,25 +973,35 @@ def morpion_IA_2(fois = 1, aleatoire = True):
         return dico
     """
     def creation_dico(ABR):
+        """
+        des fois, des feuille se mettent ensemble
+        """
         dico = {}
         dico[ABR.get_racine()] = []
         for fils in ABR.get_fils():
             if fils.est_feuille():
-                dico[ABR.get_racine()] += [fils.get_racine()]
+                dico[ABR.get_racine()] = [fils.get_racine()]
             else:
                 nouv_dico = creation_dico(fils)
                 for keys, values in nouv_dico.items():
                     if keys in dico.keys():
                         for each in values:
                             if each not in dico[keys]:
-                                dico[keys] += [each]
+                                if type(each) == int:
+                                    if each > 0:
+                                        dico[keys] = [max(dico[keys][0], each)]
+                                    elif each < 0:
+                                        dico[keys] = [min(dico[keys][0], each)]
+                                    else:
+                                        dico[keys] = [0]
+                                else:
+                                    dico[keys] += [each]
                     else:
                         dico[keys] = values
                 dico[ABR.get_racine()] += [fils.get_racine()]
         return dico
 
     dico = creation_dico(brain)
-
     ###----------------------------------------------------------------------###
 
     ###----------------------------------------------------------------------###
