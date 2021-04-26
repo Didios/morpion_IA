@@ -1,8 +1,27 @@
+#-------------------------------------------------------
+# fait par Didier Mathias
+#
+# prjet de morpion en version console python
+#-------------------------------------------------------
+
+# importation des modules
 from module_ABR import arbre_binaire as abr
 from module_ABR import arbre
 import module_lecture_fichier as read
 
+################# algo minimax et variations ###################################
+
 def minimax_binaire(node, maximizingPlayer):
+    """
+    fonction permettant d'effectuer l'algorithme minimax dans un arbre binaire
+    parametres:
+        node, un arbre binaire
+        maximizingPlayer, un booléen indiquant si le joueur doit être maximisé (True) ou minimiser (False)
+    renvoi la valeur maximisant ou minimisant les résultats du joueur
+    """
+    assert type(node) == arbre_binaire, "node doit être de type 'arbre_binaire'"
+    assert type(maximizingPlayer) == bool, "maximizingPlayer doit être un booléen"
+
     if node.est_feuille():
         return node.get_racine()
     elif maximizingPlayer:
@@ -20,46 +39,50 @@ def minimax_binaire(node, maximizingPlayer):
         else:
             return min(minimax_binaire(node.get_fg(), True), minimax_binaire(node.get_fd(), True))
 
+
 def minimax(node, maximizingPlayer, chemin = True):
+    """
+    fonction permettant d'effectuer l'algorithme minimax dans un arbre
+    parametres:
+        node, un arbre
+        maximizingPlayer, un booléen indiquant si le joueur doit être maximisé (True) ou minimiser (False)
+        chemin, optionnel, un booléen indiquant si la valeur de la branche permettant d'accéder aux chemin doit être indiqué, True par défaut
+    Si chemin, renvoie une liste contenant le nom de la branche a prendre ainsi que la valeur finale
+    Sinon, renvoie uniquement la valeur finale
+    si l'arbre est une feuille et que chemin = True, renvoie ["", -1]
+    sinon si l'arbre est une feuille, renvoie la racine de l'arbre
+    """
+    assert type(node) == arbre, "node doit être de type 'arbre'"
+    assert type(maximizingPlayer) == bool, "maximizingPlayer doit être un booléen"
+    assert type(chemin) == bool, "chemin doit être un booléen"
+
     if chemin and node.est_feuille():
         return ["", -1]
 
     sous_chemin = None
+    nbr = None
     if node.est_feuille():
         return node.get_racine()
     elif maximizingPlayer:
         for f in node.get_fils():
             if type(f) == arbre:
                 mmx = minimax(f, False, False)
-                """
-                comparez les mmx de deux fils en meme temps
-                1er mmx
-                for
-                    autre mmx
-
-                additionnez les 0, 1
-                tout additionnez
-                """
-                try:
+                if nbr != None:
                     if nbr < mmx:
                         nbr = mmx
                         sous_chemin = f.get_racine()
-                except:
+                else:
                     nbr = mmx
                     sous_chemin = f.get_racine()
     else: # (* minimizing player *)
         for f in node.get_fils():
             if type(f) == arbre:
                 mmx = minimax(f, True, False)
-                """
-                additionnez les 0, -1
-                tout soustraire
-                """
-                try:
+                if nbr != None:
                     if nbr > mmx:
                         nbr = mmx
                         sous_chemin = f.get_racine()
-                except:
+                else:
                     nbr = mmx
                     sous_chemin = f.get_racine()
 
@@ -67,6 +90,9 @@ def minimax(node, maximizingPlayer, chemin = True):
         return [sous_chemin, nbr]
     else:
         return nbr
+
+"""
+tentative pour faire des choix plus logique
 
 def minimax_probabilité(node, maximizingPlayer):
     if node.est_feuille():
@@ -100,8 +126,23 @@ def liste_feuille(node, maximizingPlayer):
         for fils in node.get_fils():
             liste += liste_feuille(fils, not maximizingPlayer)
         return liste
-
+"""
 def negamax(node, color, chemin = True):
+    """
+    fonction effectuant l'algorythme negamax, une version amélioré de minimax
+    parametres:
+        node, un arbre
+        color, un nombre (-1 ou 1 en générale) indiquant si le joueur est maximiser ou minimiser
+        chemin, optionnel, indique si la branche allant vers le résultat doit être indiqué, par defaut True
+    Si chemin, renvoie une liste contenant le nom de la branche a prendre ainsi que la valeur finale
+    Sinon, renvoie uniquement la valeur finale
+    si l'arbre est une feuille et que chemin = True, renvoie ["", -1]
+    sinon si l'arbre est une feuille, renvoie la racine de l'arbre multiplié par color
+    """
+    assert type(node) == arbre, "node doit être de type 'arbre'"
+    assert type(color) in [int, float], "color doit être un nombre"
+    assert type(chemin) == bool, "chemin doit être un booléen"
+
     if chemin and node.est_feuille():
         return ["", -1]
     elif node.est_feuille():
@@ -121,8 +162,111 @@ def negamax(node, color, chemin = True):
             return value
 
 ################################################################################
+# outils utiliser pour les morpions
+
+def montrer_plateau(plateau):
+    """
+    fonction permettant d'imprimer une liste sous l'apparence d'un tableau de jeu dans la console
+    parametres:
+        plateau, une liste constitué de liste qui représente le plateau d'un jeu
+    renvoi un print qui affiche le tableau dans la console
+    """
+    assert type(plateau) in [list, tuple], "plateau doit être une liste"
+
+    texte = "-------\n"
+    for ligne in plateau:
+        assert type(ligne) in [list, tuple], "le plateau doit être composé de liste uniquement"
+
+        texte += "|"
+        for colonne in ligne:
+            texte += colonne + "|"
+        texte += "\n-------\n"
+    print(texte)
+
+def convertion_plateau(plateau):
+    """
+    fonction permettant de transformer le plateau de jeu d'un morpion en chaine de caracteres unique
+    seule les 'X' et les 'O' ainsi que les cases vide '' sont représenté, tous autre caracteres sera représenté par un '0'
+    parametres:
+        plateau, une liste composé de liste qui représente le plateau
+    renvoie une chaine de caracteres composé de '0', '1' et '2'
+
+    exemple:
+    >>> conversion_plateau([["X", "", "O"], ["", X", ""], ["O", "", "X"]])
+    "102010201"
+    """
+    assert type(plateau) in [list, tuple], "plateau doit être une liste"
+
+    nbr = ""
+    for i in range(len(plateau)):
+        assert type(plateau[i]) in [list, tuple], "le plateau doit être composé de liste uniquement"
+
+        for j in range(len(plateau[i])):
+            if plateau[i][j] == "X":
+                nbr += "1"
+            elif plateau[i][j] == "O":
+                nbr += "2"
+            else:
+                nbr += "0"
+    return nbr
+
+def compter_pos(situation):
+    """
+    fonction permettant de compter le nombre de positions possibles pour le prochain pion dans un jeu de morpion.
+    C'est-à-dire qu'elle compte le nombre de 0 dans une chaine de caracteres
+    parametres:
+        situation, une chaine de caracteres représentant le plateau, voir fonction convertion_plateau(plateau)
+    renvoie le nombre de possibilité (de cases vides) du plateau.
+    """
+    assert type(situation) == str, "situation doit être une chaine de caracteres"
+
+    compteur = 0
+    for i in situation:
+        if i == "0":
+            compteur += 1
+    return compteur
+
+def convertion_chaine(nombre, x=3, y=3):
+    """
+    fonction permettant de transformer une chaine de caracteres en plateau de jeu d'un morpion
+    elle fait l'exacte inverse de convertion_plateau(plateau)
+    parametres:
+        nombre, une chaine de caracteres représentant le plateau de jeu
+        x, optionnel, un entier indiquant la longueur du plateau, par defaut 3
+        y, optionnel, un entier indiaquent la hauteur du plateau, par defaut 3
+    renvoie une chaine de caracteres composé de '0', '1' et '2'
+
+    exemple:
+    >>> conversion_chaine("102010201", 3, 3)
+    [["X", "", "O"], ["", X", ""], ["O", "", "X"]]
+    """
+    assert type(nombre) == str, "nombre doit être une chaine de caracteres"
+    assert x*y == len(nombre), "les valeurs renseigné ne correspondent pas au nombre"
+
+    plateau = [i for i in nombre]
+    plat = [[plateau[i + j] for j in range(x)] for i in range(0, len(plateau), y)]
+
+    for i in range(len(plat)):
+        for j in range(len(plat[i])):
+            if plat[i][j] == "0":
+                plat[i][j] = "_"
+            elif plat[i][j] == "1":
+                plat[i][j] = "X"
+            else:
+                plat[i][j] = "O"
+
+    return plat
+
+######################### les différents morpions ##############################
 
 def morpion_humain(x = 3, y = 3):
+    """
+    fonction permettant de jouer au morpion (de la taille souhaité) sur un plateau de la taille de son choix entre 2 humains.
+    Les cases sont renseigné ainsi : ligne_choisi.colonne_choisi
+    parametres:
+        x, un entier indiquant la longueur du plateau
+        y, un entier représentant la hauteur du plateau
+    """
     plateau = [["_" for i in range(x)] for j in range(y)]
     xtreme = [len(plateau[0]), len(plateau)]
 
@@ -183,73 +327,22 @@ def morpion_humain(x = 3, y = 3):
     else:
         print("La joueur %s a gagné !" % fin[1])
 
-################################################################################
-
-def montrer_plateau(plateau):
-        texte = "-------\n"
-        for ligne in plateau:
-            texte += "|"
-            for colonne in ligne:
-                texte += colonne + "|"
-            texte += "\n-------\n"
-        print(texte)
-
-def convertion_plateau(plateau):
-    nbr = ""
-    for i in range(len(plateau)):
-        for j in range(len(plateau[i])):
-            if plateau[i][j] == "X":
-                nbr += "1"
-            elif plateau[i][j] == "O":
-                nbr += "2"
-            else:
-                nbr += "0"
-    return nbr
-
-def compter_pos(situation):
-    compteur = 0
-    for i in situation:
-        if i == "0":
-            compteur += 1
-    return compteur
-
-def convertion_chaine(nombre, x=3, y=3):
-    plateau = [i for i in nombre]
-    plat = [[plateau[i + j] for j in range(x)] for i in range(0, len(plateau), y)]
-
-    for i in range(len(plat)):
-        for j in range(len(plat[i])):
-            if plat[i][j] == "0":
-                plat[i][j] = "_"
-            elif plat[i][j] == "1":
-                plat[i][j] = "X"
-            else:
-                plat[i][j] = "O"
-
-    return plat
-
-################################################################################
-
+"""
 def morpion_IA(fois = 1, aleatoire = True):
     score = {}
     score["IA"] = 0
     score["aleatoire"] = 0
     score["nul"] = 0
     for p in range(fois):
-        """
-        prevoir si le fichier a été supprimé
-        contenu de base:
-            000000000:
-        """
         # on transforme le fichier en dictionnaire
         lecture = read.lire_fichier("cerveau.txt")
         dico = {}
         for ligne in lecture:
             ligne = ligne.split(":")
             l = ligne[1].split(",")
-            """
+            ####
             lors de la construction de l'arbre, des éléments se répètent
-            """
+            ####
             dico[ligne[0]] = []
             for elmt in l:
                 if elmt != ligne[0]:
@@ -260,9 +353,9 @@ def morpion_IA(fois = 1, aleatoire = True):
             if racine == "":
                 return None
             for fils in dico[racine]:
-                """
+                ####
                 repetitions des coups dans la chaine = bug de construction
-                """
+                ####
                 if fils in ["-1", "0", "1"]:
                     ABR.add_fils(arbre(int(fils)))
                 else:
@@ -330,7 +423,7 @@ def morpion_IA(fois = 1, aleatoire = True):
 
                 choix = minimax(reflexion, False)
 
-                """
+                ####
                 MAJ de l'arbre:
 
                     analyse situation
@@ -342,7 +435,7 @@ def morpion_IA(fois = 1, aleatoire = True):
                         on enlève le fils None
 
                     reflexion devient la branche correspondante à situation
-                """
+                ####
 
                 if choix[1] < 0 and len(reflexion.get_fils()) < compter_pos(situation):
                     # on joue de manière aléatoire
@@ -368,12 +461,12 @@ def morpion_IA(fois = 1, aleatoire = True):
                     reflexion.add_fils(fils)
                     # on déplace la reflexion dans cette branche puisque c'est celle actuelle
                     reflexion = fils
-                    """
+                    ####
                     tant que x, y pas possible:
                         x, y = random entre 0 et 2
                     ajouter la nouvelle situation à reflexion
                     aller à la situation
-                    """
+                    ####
                 else:
                     for fils in reflexion.get_fils():
                         if fils.get_racine() == choix[0]:
@@ -391,7 +484,7 @@ def morpion_IA(fois = 1, aleatoire = True):
                         y += 1
                     # aller à choix[1]
                     # determiner x, y
-                """
+                ####
                 choix placement:
                     faire minmax(reflexion, False) pour connaitre la branche à prendre
                     si nom de la branche == "None":
@@ -405,7 +498,7 @@ def morpion_IA(fois = 1, aleatoire = True):
                         prendre la racine de la branche
                         comparer la racine à l'analyse
                         donner le placement x y
-                """
+                ####
 
         ###----------------------------------------------------------------------###
             # on place le pion au coordonnées selon le joueur
@@ -470,7 +563,7 @@ def morpion_IA(fois = 1, aleatoire = True):
                 fils = arbre(0)
             reflexion.set_fils(fils)
 
-        """
+        ####
         analyse situation
         si IA perdu:
             si situation nouvelle:
@@ -486,14 +579,14 @@ def morpion_IA(fois = 1, aleatoire = True):
                 prendre le fils et y ajouter 1
         sinon si situation nouvelle:
                 creer situation avec comme fils 0
-        """
+        ####
 
         ###------------------------------------------------------------------###
 
         # enregistrement du nouvel arbre
 
         # on transforme l'arbre en dictionnaire
-        """
+        ####
         def creation_dico(ABR):
             dico = {}
             l = []
@@ -507,7 +600,7 @@ def morpion_IA(fois = 1, aleatoire = True):
                     l += [fils]
             dico[ABR.get_racine()] = l
             return dico
-        """
+        ####
         def creation_dico(ABR):
             dico = {}
             dico[ABR.get_racine()] = []
@@ -530,11 +623,11 @@ def morpion_IA(fois = 1, aleatoire = True):
 
         ###----------------------------------------------------------------------###
 
-        """
+        ####
         on transforme le dictionnaire en un dictionnaire unique
             il faut faire attention s'il y a plusieurs clé identique => assembler les valeur
-        """
-        """
+        ####
+        ####
         dico_unique = False
         while not dico_unique:
             nouv_dico = []
@@ -562,17 +655,17 @@ def morpion_IA(fois = 1, aleatoire = True):
             # on vérifie si le dico est unique
             if nouv_dico == []:
                 dico_unique = True
-        """
+        ####
         ###----------------------------------------------------------------------###
         # transformation du dictionnaire en chaine de caracteres
         contenu = ""
         for keys, values in dico.items():
             contenu += keys
             contenu += ":"
-            """
+            ####
             values contient un arbre == impossible:
                 PBM fonction arbre --> dictionnaire
-            """
+            ####
             for indice in values:
                 contenu += str(indice) + ","
             contenu = contenu[:-1]
@@ -588,40 +681,49 @@ def morpion_IA(fois = 1, aleatoire = True):
             score["aleatoire"] += 1
         print(score)
 
-        """
+        ####
         il faut modifier le temps d'attente = creer une boucle  qui s'execute tant que le fichier n'est pas disponible
         os.system('TheCommand')
 
         il y a plusieurs fois le même nombre dans le dictionnaire
         {cle : [cle, cle_1, ...]}
         = ajouter verification, si pareil, pas ajouté
-        """
+        ####
 
         import time
         time.sleep(5)
 
         read.suppr_fichier("cerveau.txt", False)
         read.add_fichier("", "cerveau.txt", contenu)
+"""
 
 
 
 
+def morpion_IA_2(fois = 1, aleatoire = True, J1_premier = True):
+    """
+    fonction permettant de jouer à un morpion classique sur la console contre une IA, celle_ci évolue au fur et à mesure des parties
+    le score actuel est affiché à chaque fin de partie
+    parametres:
+        fois, optionnel, un entier positif supérieur à 0 permettant de définir le nombre de parties que l'on souhaite effectuée, par défaut 1
+        aleatoire, optionnel, un booléen indiaquant si l'IA doit jouer contre un humain (False) ou contre un joueur aléatoire (True), par defaut True
+        J1_premier, optionnel, un booléen indiquant qui est le premier joueur, False pour l'IA, True pour l'autre joueur, par defaut True
+    """
+    assert type(fois) == int, "fois doit être un entier"
+    assert fois > 0, "fois doit être plus grand que 0"
+    assert type(aleatoire) == bool, "aleatoire doit être un booléen"
+    assert type(J1_premier) == bool, "J1_premier doit être un booléen"
 
-def morpion_IA_2(fois = 1, aleatoire = True):
     score = {}
     score["IA"] = 0
     score["aleatoire"] = 0
     score["nul"] = 0
 
-
-    """
-    prevoir si le fichier a été supprimé
-    contenu de base:
-        000000000:
-    """
+    # si le fichier contenant la mémoire (la majorité de son "cerveau") n'existe pas, on le crée
     if not read.fichier_existe("cerveau_2.txt"):
         read.add_fichier("", "cerveau_2.txt", "000000000:")
 
+    # on lit le contenu de la mémoire
     lecture = read.lire_fichier("cerveau_2.txt")
 
     # on transforme le fichier en dictionnaire
@@ -631,6 +733,7 @@ def morpion_IA_2(fois = 1, aleatoire = True):
         l = ligne[1].split(",")
         """
         lors de la construction de l'arbre, des éléments se répètent
+        probleme lors de l'enregistrement de l'arbre == mélange des dictionnaires lors de situation identique
         """
         dico[ligne[0]] = []
         for elmt in l:
@@ -638,13 +741,20 @@ def morpion_IA_2(fois = 1, aleatoire = True):
                 dico[ligne[0]] += [elmt]
 
     def creation_arbre(dico, racine):
+        """
+        sous-fonction permettant de creer un arbre des possibilité de jeu à partir d'un dictionnaire
+        chaque clé de l'arbre devient une branche, chaque element dans la liste de valeur d'une clé devient soit une branche s'il existe en tant que clé, soit une feuille mais en tant que valeur
+        parametres:
+            dico, un dictionnaire récapitulant l'arbre
+            racine, une clé du dictionnaire étant la racine de l'arbre
+        """
+        assert type(dico) == dict, "dico doit être un dictionnaire"
+        assert racine in dico.keys(), "la racine doit être présente dans le dictionnaire"
+
         ABR = arbre(racine)
         if racine == "":
             return None
         for fils in dico[racine]:
-            """
-            repetitions des coups dans la chaine = bug de construction
-            """
             try:
                 sous_arbre = creation_arbre(dico, fils)
                 if sous_arbre is not None:
@@ -667,10 +777,10 @@ def morpion_IA_2(fois = 1, aleatoire = True):
         ["_", "_", "_"]
         ]
 
-        fin = [False, "J1"] # sert à jouer en alternance et à arreter le jeu
+        fin = [J1_premier, "IA"] # sert à jouer en alternance et à arreter le jeu
 
         while not fin[0]: # tant qu'on a pas fini
-
+            ###----------------------- joueur hors IA -----------------------###
             if fin[1] == "J1": # le 1er joueur
                 if aleatoire: # le joueur aléatoire
                     from random import randint
@@ -712,7 +822,6 @@ def morpion_IA_2(fois = 1, aleatoire = True):
 
                 choix = negamax(reflexion, 1)
                 # choix = minimax(reflexion, False)
-                #choix = minimax_probabilité(reflexion, False)
                 """
                 MAJ de l'arbre:
 
@@ -931,6 +1040,7 @@ def morpion_IA_2(fois = 1, aleatoire = True):
 
         reflexion = brain
 
+        # onn met un temp d'attente entre chaque partie afin d'éviter les problemes du à la vitesse d'éxécution
         import time
         time.sleep(0.1)
 
@@ -974,6 +1084,13 @@ def morpion_IA_2(fois = 1, aleatoire = True):
     """
     def creation_dico(ABR):
         """
+        sous-fonction permettant de transformer un arbre en dictionnaire dont chaque clé est un noeud interne et dont chaque élément correspondant et soit une branche, soit une feuille
+        effectue l'inverse de la fonction creation-arbre(dico, racine)
+        parametres:
+            ABR, un arbre
+        renvoie un dictionnaire contenant l'arbre dans sa globalité
+        """
+        """
         des fois, des feuille se mettent ensemble
         """
         dico = {}
@@ -1010,10 +1127,6 @@ def morpion_IA_2(fois = 1, aleatoire = True):
     for keys, values in dico.items():
         contenu += keys
         contenu += ":"
-        """
-        values contient un arbre == impossible:
-            PBM fonction arbre --> dictionnaire
-        """
         for indice in values:
             contenu += str(indice) + ","
         contenu = contenu[:-1]

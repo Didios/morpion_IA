@@ -1,25 +1,38 @@
 #-------------------------------------------------------------------------------
 # Name:        interface finale morpion IA
-# Purpose:     donner au morpion précédent une interface
+# Purpose:     donner au morpion sur console une interface
 #
 # Author:      Didier Mathias
 #
 # Created:     23/04/2021
 #-------------------------------------------------------------------------------
+
+# importation des modules
 from tkinter import Tk, Canvas, Button, Menu, Scale, Label, Radiobutton, StringVar
 import module_lecture_fichier as read
 from module_ABR import arbre
+
+
 """
 faire en sorte que l'IA puisse jouer contre elle-même
 """
 
 class morpion:
+    """
+    objet permettant d'éxécuter un morpion
+    """
     def __init__(self):
+        """
+        constructeur de la classe
+        on crée ici la barre de menu ainsi que les variables de bases nécessaires
+        on lance directement le jeu
+        """
         self.root = Tk()
         self.root.title("Morpion")
 
         self.turn = "J1"
         self.symbole = "X"
+
         def turn(player):
             self.turn = player
 
@@ -35,7 +48,10 @@ class morpion:
         self.lancement()
         self.root.mainloop()
 
-    def lancement(self, event = None):
+    def lancement(self):
+        """
+        méthode permettant de lancer l'écran principal du morpion avec les choix de partie
+        """
         for c in self.root.winfo_children():
             if c.winfo_class() == "Canvas":
                 c.destroy()
@@ -54,6 +70,9 @@ class morpion:
 
 
     def partie_humaine(self):
+        """
+        méthode permettant d'éxécuter un morpion entre 2 humain sur une grille de 3X3
+        """
         for c in self.root.winfo_children():
             if c.winfo_class() == "Button":
                 c.destroy()
@@ -65,16 +84,22 @@ class morpion:
         self.jeu.create_line(100, 0, 100, 300)
         self.jeu.create_line(200, 0, 200, 300)
 
-        def action(event):
+        def action():
+            """
+            sous-fonction permettant de jouer ou de retourner à l'écran titre selon le déroulement de la partie
+            """
             if self.fin:
                 self.lancement()
             else:
                 self.coup(event)
 
-        self.jeu.bind("<1>", action)
+        self.jeu.bind("<1>", lambda x=None: action())
         self.jeu.pack()
 
     def partie_IA_renforcement(self):
+        """
+        méthode permettant de faire une partie contre une IA à renforcement, elle apprend avec les parties précédentes joué
+        """
         for c in self.root.winfo_children():
             if c.winfo_class() == "Button":
                 c.destroy()
@@ -86,7 +111,10 @@ class morpion:
         self.jeu.create_line(100, 0, 100, 300)
         self.jeu.create_line(200, 0, 200, 300)
 
-        def action(event):
+        def action():
+            """
+            sous-fonction permettant de jouer ou de retourner à l'écran titre selon le déroulement de la partie
+            """
             if self.fin:
                 if self.turn == "J1":
                     ordi.fin_partie(self.plateau, "IA")
@@ -100,15 +128,22 @@ class morpion:
                     if self.coup(event) != "":
                         self.coup(event)
                         if not self.fin:
-                            self.coup(ordi.jouer(self.plateau))
+                            if self.symbole == "X":
+                                self.coup(ordi.jouer(self.plateau, "O"))
+                            else:
+                                self.coup(ordi.jouer(self.plateau, "X"))
                 else:
-                    self.coup(ordi.jouer(self.plateau))
+                    if self.symbole == "X":
+                        self.coup(ordi.jouer(self.plateau, "O"))
+                    else:
+                        self.coup(ordi.jouer(self.plateau, "X"))
         ordi = IA("cerveau_2.txt")
-        self.jeu.bind("<1>", action)
+        self.jeu.bind("<1>", lambda x=None: action())
         self.jeu.pack()
 
     """
     Ne fonctionne pas pour une raison inconnue
+    ensemble de méthode ayant pour but de faire s'entrainer l'IA contre elle meme ou contre un joueur aleatoire
 
     def entrainement(self):
         def entrainement_go():
@@ -218,6 +253,11 @@ class morpion:
     """
 
     def coup(self, event):
+        """
+        méthode permettant d'effectuer un coup sur le plateau, elle place le pion correspondant et annonce la fin de la partie
+        parametres:
+            event, un event souris avec les coordonnes de la souris sur le plateau
+        """
         try:
             x = event.x // 100
             y = event.y // 100
@@ -286,6 +326,10 @@ class morpion:
                     self.jeu.create_text(150, 150, font = ('Times', -20, 'bold'), text = "J1 a Gagner")
 
     def verifier_plateau(self):
+        """
+        méthode permettant de connaitre l'etat du plateau : partie nul ou si quelqu'un a gagné
+        renvoie une chaine de caracteres indiquant l'état du plateau
+        """
         # ligne
         l1 = self.plateau[0][0] == self.plateau[0][1] == self.plateau[0][2] and self.plateau[0][0] != "_"
         l2 = self.plateau[1][0] == self.plateau[1][1] == self.plateau[1][2] and self.plateau[1][0] != "_"
@@ -327,7 +371,15 @@ class morpion:
 
 
 class IA:
+    """
+    objet permettant le contrôle d'une IA par renforcement pour jouer au morpion
+    """
     def __init__(self, brain):
+        """
+        constructeur de la classe, elle définit le cerveau et met en place la mémoire de l'IA
+        parametres:
+            brain, une chaine de caracteres indiquant le chemin vers le fichier de mémoire, s'il n'existe pas, il est crée
+        """
         if not read.fichier_existe(brain):
             read.add_fichier("", brain, "000000000:")
         self.fichier_cerveau = brain
@@ -335,6 +387,9 @@ class IA:
         self.debut_partie()
 
     def debut_partie(self):
+        """
+        méthode permettant de préparer l'IA en vue d'une partie, on converti le fichier de mémoire en arbre
+        """
         lecture = read.lire_fichier(self.fichier_cerveau)
 
         # on transforme le fichier en dictionnaire
@@ -348,6 +403,13 @@ class IA:
                     dico[ligne[0]] += [elmt]
 
         def creation_arbre(dico, racine):
+            """
+            sous-fonction permettant de creer un arbre des possibilité de jeu à partir d'un dictionnaire
+            chaque clé de l'arbre devient une branche, chaque element dans la liste de valeur d'une clé devient soit une branche s'il existe en tant que clé, soit une feuille mais en tant que valeur
+            parametres:
+                dico, un dictionnaire récapitulant l'arbre
+                racine, une clé du dictionnaire étant la racine de l'arbre
+            """
             ABR = arbre(racine)
             if racine == "":
                 return None
@@ -364,12 +426,22 @@ class IA:
         self.reflexion = self.brain
 
     def deplacement_reflexion(self, situation):
+        """
+        méthode permettant de déplacer la reflexion de l'IA vers l'une des branches de celle-ci (on se déplace dans l'arbred es possibilité
+        """
         for fils in self.reflexion.get_fils():
             if fils.get_racine() == situation:
                 self.reflexion = fils
                 break
 
-    def jouer(self, plateau):
+    def jouer(self, plateau, pion):
+        """
+        méthode permettant de connaître le coup que va jouer l'IA
+        parametres:
+            plateau, une liste de liste représentant le plateau
+            pion, le pion que joue l'IA : les X ou les O
+            renvoie les coordonnées du plateau ou joue l'IA
+        """
         situation = self.plateau_conversion_chaine(plateau)
         scenarios = [x.get_racine() for x in self.reflexion.get_fils()]
 
@@ -390,10 +462,10 @@ class IA:
             while i < len(situation):
                 if situation[i] == "0":
                     s = situation
-                    s = s[:i] + "2" + s[i+1:]
-                    """
-                    changer selon si l'IA joue en premier ou en deuxieme = X ou O
-                    """
+                    if pion == "O":
+                        s = s[:i] + "2" + s[i+1:]
+                    else:
+                        s = s[:i] + "1" + s[i+1:]
                     if s not in scenarios:
                         break
                 i += 1
@@ -424,6 +496,9 @@ class IA:
         return [x, y]
 
     def fin_partie(self, plateau, gagnant):
+        """
+        méthode permettant de sauvegarder l'arbre de connaissances posséder par l'IA dans le fichier de mémoire
+        """
         situation = self.plateau_conversion_chaine(plateau)
         scenarios = [x.get_racine() for x in self.reflexion.get_fils()]
 
@@ -468,6 +543,13 @@ class IA:
                 self.reflexion.set_fils(arbre(valeur -1))
 
         def creation_dico(ABR):
+            """
+            sous-fonction permettant de transformer un arbre en dictionnaire dont chaque clé est un noeud interne et dont chaque élément correspondant et soit une branche, soit une feuille
+            effectue l'inverse de la fonction creation-arbre(dico, racine)
+            parametres:
+                ABR, un arbre
+            renvoie un dictionnaire contenant l'arbre dans sa globalité
+            """
             dico = {}
             dico[ABR.get_racine()] = []
             for fils in ABR.get_fils():
@@ -502,6 +584,15 @@ class IA:
 
 
     def plateau_conversion_chaine(self, plateau):
+        """
+        fonction permettant de transformer le plateau de jeu d'un morpion en chaine de caracteres unique
+        seule les 'X' et les 'O' ainsi que les cases vide '' sont représenté, tous autre caracteres sera représenté par un '0'
+        parametres:
+            plateau, une liste composé de liste qui représente le plateau
+        renvoie une chaine de caracteres composé de '0', '1' et '2'
+        """
+        assert type(plateau) in [list, tuple], "plateau doit être une liste"
+
         nbr = ""
         for i in range(len(plateau)):
             for j in range(len(plateau[i])):
@@ -514,6 +605,17 @@ class IA:
         return nbr
 
     def chaine_conversion_plateau(self, chaine):
+        """
+        fonction permettant de transformer une chaine de caracteres en plateau de jeu d'un morpion
+        parametres:
+            nombre, une chaine de caracteres représentant le plateau de jeu
+            x, optionnel, un entier indiquant la longueur du plateau, par defaut 3
+            y, optionnel, un entier indiaquent la hauteur du plateau, par defaut 3
+        renvoie une chaine de caracteres composé de '0', '1' et '2'
+        """
+        assert type(chaine) == str, "chaine doit être une chaine de caracteres"
+        assert len(chaine) == 9, "la chaine n'est pas assez longue"
+
         plateau = [i for i in chaine]
         plat = [[plateau[i + j] for j in range(3)] for i in range(0, len(plateau), 3)]
 
@@ -529,6 +631,15 @@ class IA:
         return plat
 
     def nbr_possibilite(self, situation):
+        """
+        fonction permettant de compter le nombre de positions possibles pour le prochain pion dans un jeu de morpion.
+        C'est-à-dire qu'elle compte le nombre de 0 dans une chaine de caracteres
+        parametres:
+            situation, une chaine de caracteres représentant le plateau, voir fonction convertion_plateau(plateau)
+        renvoie le nombre de possibilité (de cases vides) du plateau.
+        """
+        assert type(situation) == str, "situation doit être une chaine de caracteres"
+
         compteur = 0
         for i in situation:
             if i == "0":
@@ -536,6 +647,17 @@ class IA:
         return compteur
 
 def negamax(node, color, chemin = True):
+    """
+    fonction effectuant l'algorythme negamax, une version amélioré de minimax
+    parametres:
+        node, un arbre
+        color, un nombre (-1 ou 1 en générale) indiquant si le joueur est maximiser ou minimiser
+        chemin, optionnel, indique si la branche allant vers le résultat doit être indiqué, par defaut True
+    Si chemin, renvoie une liste contenant le nom de la branche a prendre ainsi que la valeur finale
+    Sinon, renvoie uniquement la valeur finale
+    si l'arbre est une feuille et que chemin = True, renvoie ["", -1]
+    sinon si l'arbre est une feuille, renvoie la racine de l'arbre multiplié par color
+    """
     if chemin and node.est_feuille():
         return ["", -1]
     elif node.est_feuille():
@@ -553,5 +675,7 @@ def negamax(node, color, chemin = True):
             return [sous_chemin, value]
         else:
             return value
+
+
 if __name__ == "__main__":
     morpion()
