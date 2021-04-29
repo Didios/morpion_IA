@@ -84,16 +84,18 @@ class morpion:
         self.jeu.create_line(100, 0, 100, 300)
         self.jeu.create_line(200, 0, 200, 300)
 
-        def action():
+        def action(event):
             """
             sous-fonction permettant de jouer ou de retourner à l'écran titre selon le déroulement de la partie
+            parametres:
+                event, un event souris de clic
             """
             if self.fin:
                 self.lancement()
             else:
                 self.coup(event)
 
-        self.jeu.bind("<1>", lambda x=None: action())
+        self.jeu.bind("<1>", action)
         self.jeu.pack()
 
     def partie_IA_renforcement(self):
@@ -111,9 +113,11 @@ class morpion:
         self.jeu.create_line(100, 0, 100, 300)
         self.jeu.create_line(200, 0, 200, 300)
 
-        def action():
+        def action(event):
             """
             sous-fonction permettant de jouer ou de retourner à l'écran titre selon le déroulement de la partie
+            parametres:
+                event, un event souris de clic
             """
             if self.fin:
                 if self.turn == "J1":
@@ -138,7 +142,7 @@ class morpion:
                     else:
                         self.coup(ordi.jouer(self.plateau, "X"))
         ordi = IA("cerveau_2.txt")
-        self.jeu.bind("<1>", lambda x=None: action())
+        self.jeu.bind("<1>", action)
         self.jeu.pack()
 
     """
@@ -319,6 +323,10 @@ class morpion:
                 self.turn = "NUL"
                 self.jeu.create_text(150, 150, font = ('Times', -20, 'bold'), text = "Match NUL")
 
+            """
+            faire en sorte de faire un rectangle blanc encadrant le texte afin qu'il reste visible
+            """
+
             if verif != "PLEIN":
                 if self.turn == "J1":
                    self.jeu.create_text(150, 150, font = ('Times', -20, 'bold'), text = "J2 a Gagner")
@@ -410,20 +418,44 @@ class IA:
                 dico, un dictionnaire récapitulant l'arbre
                 racine, une clé du dictionnaire étant la racine de l'arbre
             """
+
+            """
+            doit être transformer en algo iteratif
+            le recursif n'etant pas assez puissant
+            """
+
+
             ABR = arbre(racine)
             if racine == "":
                 return None
             for fils in dico[racine]:
-                try:
+                if fils in dico.keys():
                     sous_arbre = creation_arbre(dico, fils)
                     if sous_arbre is not None:
                         ABR.add_fils(sous_arbre)
-                except:
+                else:
                     ABR.add_fils(arbre(int(fils)))
             return ABR
 
+            """
+            dico_arbre = {}
+            for keys in dico.keys():
+                if len(dico[keys]) == 1 and dico[keys][0] not in dico.keys():
+                    dico_arbre[keys] = arbre(keys, arbre(int(dico[keys][0])))
+                else:
+                    dico_arbre[keys] = arbre(keys)
+
+            for racine, noeud in dico_arbre.items():
+                for branche in dico[racine]:
+                    if branche in dico.keys():
+                        noeud.add_fils(dico_arbre[branche])
+
+            return dico_arbre[racine]
+            """
+
         self.brain = creation_arbre(dico, "000000000") # cerveau en entier
         self.reflexion = self.brain
+
 
     def deplacement_reflexion(self, situation):
         """
@@ -498,6 +530,8 @@ class IA:
     def fin_partie(self, plateau, gagnant):
         """
         méthode permettant de sauvegarder l'arbre de connaissances posséder par l'IA dans le fichier de mémoire
+
+        changement de la valeur
         """
         situation = self.plateau_conversion_chaine(plateau)
         scenarios = [x.get_racine() for x in self.reflexion.get_fils()]
@@ -519,15 +553,6 @@ class IA:
                 feuille = arbre(situation, arbre(0))
             else:
                 feuille = arbre(0)
-
-        """
-        il faut changer le score si la situation a déjà été fait
-        else:
-            aller à situation
-            prendre la valeur du fils
-            changer la valeur
-            remettre la nouvelle valeur
-        """
 
         if feuille != None:
             self.reflexion.set_fils(feuille)
@@ -675,7 +700,6 @@ def negamax(node, color, chemin = True):
             return [sous_chemin, value]
         else:
             return value
-
 
 if __name__ == "__main__":
     morpion()

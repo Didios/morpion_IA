@@ -328,6 +328,8 @@ def morpion_humain(x = 3, y = 3):
         print("La joueur %s a gagné !" % fin[1])
 
 """
+1er fonction permettant de jouer contre l'IA, abandonner à cause de trop nombreux probleme est repris dans morpion_IA_2()
+
 def morpion_IA(fois = 1, aleatoire = True):
     score = {}
     score["IA"] = 0
@@ -749,17 +751,17 @@ def morpion_IA_2(fois = 1, aleatoire = True, J1_premier = True):
             racine, une clé du dictionnaire étant la racine de l'arbre
         """
         assert type(dico) == dict, "dico doit être un dictionnaire"
-        assert racine in dico.keys(), "la racine doit être présente dans le dictionnaire"
 
         ABR = arbre(racine)
         if racine == "":
             return None
+
         for fils in dico[racine]:
-            try:
+            if racine in dico.keys():
                 sous_arbre = creation_arbre(dico, fils)
                 if sous_arbre is not None:
                     ABR.add_fils(sous_arbre)
-            except:
+            else:
                 ABR.add_fils(arbre(int(fils)))
 
         return ABR
@@ -777,7 +779,10 @@ def morpion_IA_2(fois = 1, aleatoire = True, J1_premier = True):
         ["_", "_", "_"]
         ]
 
-        fin = [J1_premier, "IA"] # sert à jouer en alternance et à arreter le jeu
+        if J1_premier:
+            fin = [False, "J1"] # sert à jouer en alternance et à arreter le jeu
+        else:
+            fin = [False, "IA"]
 
         while not fin[0]: # tant qu'on a pas fini
             ###----------------------- joueur hors IA -----------------------###
