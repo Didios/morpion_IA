@@ -52,30 +52,26 @@ class morpion:
         """
         méthode permettant de lancer l'écran principal du morpion avec les choix de partie
         """
-        for c in self.root.winfo_children():
-            if c.winfo_class() == "Canvas":
-                c.destroy()
+        self.vider_root("Menu") # on enlève ce qui se trouve sur le fenêtre
 
-        self.plateau = [
-        ["_", "_", "_"],
-        ["_", "_", "_"],
-        ["_", "_", "_"]]
+        # on initialise les variables (attributs)
         self.turn = "J1"
         self.symbole = "X"
         self.fin = False
 
+        # on affiche les différents choix de partie
         Button(self.root, text = "2 joueurs", command = self.partie_humaine, width = 20, height = 5).pack()
         Button(self.root, text = "IA renforcement", command = self.partie_IA_renforcement, width = 20, height = 5).pack()
-        #        Button(self.root, text = "entrainement IA", command = self.entrainement).pack()
+        Button(self.root, text = "entrainement IA", command = self.entrainement, width = 20, height = 5).pack()
 
-
-    def partie_humaine(self):
+    def dessiner_plateau(self):
         """
-        méthode permettant d'éxécuter un morpion entre 2 humain sur une grille de 3X3
+        méthode permettant de créer le plateau de jeu, tout autant visuel que digital
         """
-        for c in self.root.winfo_children():
-            if c.winfo_class() == "Button":
-                c.destroy()
+        self.plateau = [
+        ["_", "_", "_"],
+        ["_", "_", "_"],
+        ["_", "_", "_"]]
 
         self.jeu = Canvas(self.root, width = 300, height = 300, bg = "white")
 
@@ -83,6 +79,15 @@ class morpion:
         self.jeu.create_line(0, 200, 300, 200)
         self.jeu.create_line(100, 0, 100, 300)
         self.jeu.create_line(200, 0, 200, 300)
+
+
+    def partie_humaine(self):
+        """
+        méthode permettant d'éxécuter un morpion entre 2 humain sur une grille de 3X3
+        """
+        self.vider_root("Menu")
+
+        self.dessiner_plateau()
 
         def action(event):
             """
@@ -102,16 +107,9 @@ class morpion:
         """
         méthode permettant de faire une partie contre une IA à renforcement, elle apprend avec les parties précédentes joué
         """
-        for c in self.root.winfo_children():
-            if c.winfo_class() == "Button":
-                c.destroy()
+        self.vider_root("Menu")
 
-        self.jeu = Canvas(self.root, width = 300, height = 300, bg = "white")
-
-        self.jeu.create_line(0, 100, 300, 100)
-        self.jeu.create_line(0, 200, 300, 200)
-        self.jeu.create_line(100, 0, 100, 300)
-        self.jeu.create_line(200, 0, 200, 300)
+        self.dessiner_plateau()
 
         def action(event):
             """
@@ -141,34 +139,46 @@ class morpion:
                         self.coup(ordi.jouer(self.plateau, "O"))
                     else:
                         self.coup(ordi.jouer(self.plateau, "X"))
+
         ordi = IA("cerveau_2.txt")
         self.jeu.bind("<1>", action)
         self.jeu.pack()
 
-    """
-    Ne fonctionne pas pour une raison inconnue
-    ensemble de méthode ayant pour but de faire s'entrainer l'IA contre elle meme ou contre un joueur aleatoire
 
     def entrainement(self):
         def entrainement_go():
             repet = repetitions.get()
 
-            for c in self.root.winfo_children():
-                if c.winfo_class() in ["Button", "Label", "Scale", "Radiobutton"]:
-                    c.destroy()
+            self.vider_root("Menu")
 
-            for r in range(1, repet+1):
-                self.jeu = Canvas(self.root, height = 20, width = 1000)
-                self.jeu.pack()
+            self.dessiner_plateau()
 
-                ordi = IA("cerveau.txt")
-                ordi_2 = IA("cerveau_2.txt")
+            ordi = IA("cerveau.txt")
+            ordi_2 = IA("cerveau_2.txt")
+
+            # progression va indiquer le pourcentage de la demande effectué
+            progression = Label(self.root, text =  "0.0% effectué", font = ('Times', -20, 'bold'))
+            progression.pack()
+
+            # on crée une barre de chargement, plus visuel
+            progression_bar = Canvas(self.root, width = 1000, height = 20)
+            progression_bar.create_rectangle(0, 0, 1000, 200, outline = "white", fill = "grey")
+            progression_bar.pack()
+
+            for r in range(repet):
+                # on réinitialise le plateau de jeu afin que les IA puisse jouer
+                self.plateau = [
+                ["_", "_", "_"],
+                ["_", "_", "_"],
+                ["_", "_", "_"]]
+
                 self.fin = False
                 while not self.fin:
-                    self.coup(ordi.jouer(self.plateau))
+                    self.coup(ordi.jouer(self.plateau, "X"))
                     if not self.fin:
-                        self.coup(ordi_2.jouer(self.plateau))
+                        self.coup(ordi_2.jouer(self.plateau, "O"))
 
+                # Quand la partie est finie, on enregistre les données
                 if self.turn == "J1":
                     ordi.fin_partie(self.plateau, "IA")
                     ordi_2.fin_partie(self.plateau, "J1")
@@ -179,82 +189,41 @@ class morpion:
                     ordi.fin_partie(self.plateau, "NUL")
                     ordi_2.fin_partie(self.plateau, "NUL")
 
-                self.jeu.create_rectangle(0, 0, 1000*repet/r, 20)
+                ordi.debut_partie()
+                ordi_2.debut_partie()
 
-        for c in self.root.winfo_children():
-            if c.winfo_class() == "Button":
-                c.destroy()
+                """
+                probleme de freeze du au fait que tkinter fonctionne avec des mainloop
+                utilisation de update pour régler le probleme
+                """
+                # on met à jour les informations de progression
+                pourcentage = int(1000*r/repet)/10 # on obtient un pourcentage avec une décimal (ça évite d'avoir trop de décimal)
+                progression.configure(text = str(pourcentage) + "% effectué")
 
-        Label(self.root, text = "Nombres d'entrainements :").pack()
+                progression_bar.delete('chargement') # on évite d'avoir trop d'item dans le canvas
+                progression_bar.create_rectangle(0, 0, pourcentage * 10, 20, fill = "black", tags = "chargement")
+                self.root.update() # on rafraichit la fenêtre afin que les changements s'affichent
+
+            """
+            il faudrait faire en sorte de mixer les deux fichiers cerveau.txt et cerveau_2.txt
+            comme ça l'IA aura les connaissances des deux adversaires
+            """
+
+            self.lancement()
+
+        self.vider_root("Menu")
+
+        Label(self.root, text = "Nombres de partie d'entrainements :").pack()
         repetitions = Scale(self.root, orient='horizontal', from_=50, to=10000, resolution=1, length=500)
         repetitions.pack()
 
-        choix = StringVar()
-        choix.set("IA")
-        Radiobutton(self.root, text = "IA VS IA", variable = choix, value = "IA").pack()
-        Radiobutton(self.root, text = "IA VS aléatoire", variable = choix, value = "alea").pack()
         Button(self.root, text = "GO !", command = entrainement_go).pack()
 
-    def entrainement(self):
-        def entrainement_go():
-            ordi = IA("cerveau_2.txt")
-            if choix.get() == "IA":
-                ordi_2 = IA("cerveau_2.txt")
-            else:
-                from random import randint
-
-            for repet in range(repetitions.get()):
-                print(repet)
-                for c in self.root.winfo_children():
-                    if c.winfo_class() in ["Button", "Scale", "Label", "Canvas", "Radiobutton"]:
-                        c.destroy()
-
-                self.jeu = Canvas(self.root, width = 300, height = 300, bg = "white")
-                self.jeu.create_line(0, 100, 300, 100)
-                self.jeu.create_line(0, 200, 300, 200)
-                self.jeu.create_line(100, 0, 100, 300)
-                self.jeu.create_line(200, 0, 200, 300)
-                self.jeu.pack()
-
-                self.turn = "J1"
-                self.fin = False
-                while not self.fin:
-                    self.coup(ordi.jouer(self.plateau))
-
-                    if choix.get() == "IA" and not self.fin:
-                        self.coup(ordi_2.jouer(self.plateau))
-                    elif not self.fin:
-                        test_coup = ""
-                        while test_coup == "":
-                            test_coup = self.coup([randint(0,2), randint(0,2)])
-
-                if self.turn == "J1":
-                    ordi.fin_partie(self.plateau, "IA")
-                    if choix.get() == "IA":
-                        ordi_2.fin_partie(self.plateau, "J1")
-                elif self.turn == "J2":
-                    ordi.fin_partie(self.plateau, "J1")
-                    if choix.get() == "IA":
-                        ordi_2.fin_partie(self.plateau, "IA")
-                else:
-                    ordi.fin_partie(self.plateau, "NUL")
-                    if choix.get() == "IA":
-                        ordi_2.fin_partie(self.plateau, "NUL")
-
+    def vider_root(self, *epargner):
         for c in self.root.winfo_children():
-            if c.winfo_class() == "Button":
+            if c.winfo_class() not in epargner:
                 c.destroy()
 
-        Label(self.root, text = "Nombres d'entrainements :").pack()
-        repetitions = Scale(self.root, orient='horizontal', from_=50, to=10000, resolution=1, length=500)
-        repetitions.pack()
-
-        choix = StringVar()
-        choix.set("IA")
-        Radiobutton(self.root, text = "IA VS IA", variable = choix, value = "IA").pack()
-        Radiobutton(self.root, text = "IA VS aléatoire", variable = choix, value = "alea").pack()
-        Button(self.root, text = "GO !", command = entrainement_go).pack()
-    """
 
     def coup(self, event):
         """
@@ -262,12 +231,12 @@ class morpion:
         parametres:
             event, un event souris avec les coordonnes de la souris sur le plateau
         """
-        try:
-            x = event.x // 100
-            y = event.y // 100
-        except:
+        if type(event) == list:
             x = event[1]
             y = event[0]
+        else:
+            x = event.x // 100
+            y = event.y // 100
 
         if self.plateau[y][x] == "_":
             if self.turn == "J1":
@@ -298,10 +267,10 @@ class morpion:
         verif = self.verifier_plateau()
 
         if verif != None:
-            self.fin = True
+            self.fin = True # le jeu est fini
             # ligne
             if verif == "L1":
-                self.jeu.create_line(15, 50, 285, 50, width = 10)
+                self.jeu.create_line(15, 50, 285, 50, width = 10) # les lignes semblables à celle-ci permettent de faire un trait sur les trois symboles aligné (montrant ainsi comment le joueur à gagner
             elif verif == "L2":
                 self.jeu.create_line(15, 150, 285, 150, width = 10)
             elif verif == "L3":
@@ -321,6 +290,7 @@ class morpion:
             # plein
             else:
                 self.turn = "NUL"
+                self.jeu.create_rectangle(75, 125, 225, 175, fill = "white")
                 self.jeu.create_text(150, 150, font = ('Times', -20, 'bold'), text = "Match NUL")
 
             """
@@ -329,8 +299,10 @@ class morpion:
 
             if verif != "PLEIN":
                 if self.turn == "J1":
-                   self.jeu.create_text(150, 150, font = ('Times', -20, 'bold'), text = "J2 a Gagner")
+                    self.jeu.create_rectangle(75, 125, 225, 175, fill = "white")
+                    self.jeu.create_text(150, 150, font = ('Times', -20, 'bold'), text = "J2 a Gagner")
                 else:
+                    self.jeu.create_rectangle(75, 125, 225, 175, fill = "white")
                     self.jeu.create_text(150, 150, font = ('Times', -20, 'bold'), text = "J1 a Gagner")
 
     def verifier_plateau(self):
@@ -433,7 +405,7 @@ class IA:
                     sous_arbre = creation_arbre(dico, fils)
                     if sous_arbre is not None:
                         ABR.add_fils(sous_arbre)
-                else:
+                elif fils != "":
                     ABR.add_fils(arbre(int(fils)))
             return ABR
 
@@ -486,7 +458,7 @@ class IA:
 
         choix = negamax(self.reflexion, 1)
 
-        if choix[1] < 0 and len(self.reflexion.get_fils()) < self.nbr_possibilite(situation):
+        if choix[1] < 1 and len(self.reflexion.get_fils()) < self.nbr_possibilite(situation):
             scenarios = [x.get_racine() for x in self.reflexion.get_fils()]
 
             situation = self.plateau_conversion_chaine(plateau)
