@@ -1,0 +1,31 @@
+Partie du 11/5/2021
+à 19:43:50
+Partie Humain VS Humain
+
+Joueur 1 :
+X|_|_
+_|_|_
+_|_|_
+
+Joueur 2 :
+X|O|_
+_|_|_
+_|_|_
+
+Joueur 1 :
+X|O|_
+_|X|_
+_|_|_
+
+Joueur 2 :
+X|O|_
+_|X|O
+_|_|_
+
+Joueur 1 :
+X|O|_
+_|X|O
+_|_|X
+
+
+VICTOIRE JOUEUR 1

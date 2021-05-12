@@ -1,0 +1,10 @@
+Partie du 11/05/2021 
+à 14:41:32
+Partie humain VS IA
+....
+joueur 1
+X|O|X
+O|X|O
+X|O|X
+
+Joueur 1 a gagné

@@ -1,0 +1,31 @@
+Partie du 11/5/2021
+à 20:2:55
+Partie Humain VS IA
+
+Joueur 1 :
+_|_|_
+_|_|_
+X|_|_
+
+IA :
+O|_|_
+_|_|_
+X|_|_
+
+Joueur 1 :
+O|_|_
+_|X|_
+X|_|_
+
+IA :
+O|O|_
+_|X|_
+X|_|_
+
+Joueur 1 :
+O|O|X
+_|X|_
+X|_|_
+
+
+VICTOIRE JOUEUR 1
