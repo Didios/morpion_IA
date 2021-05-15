@@ -6,6 +6,7 @@
 # importation des modules necessaires
 import os
 import os.path
+import shutil
 
 
 def devine_numero(texte):
@@ -180,6 +181,9 @@ def suppr_fichier(file, verif = True):
 
         if kill:
             os.remove(file)
+
+def mouv_fichier(source, destination):
+    shutil.copyfile(source, destination)
 
 def add_repertoire(path, name):
     """

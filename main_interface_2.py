@@ -8,11 +8,12 @@
 #-------------------------------------------------------------------------------
 
 # importation des modules
-from tkinter import Tk, Canvas, Button, Menu, Scale, Label, Radiobutton, StringVar
+from tkinter import Tk, Canvas, Button, Menu, Scale, Label, Radiobutton, StringVar, filedialog, messagebox, Toplevel
 import module_lecture_fichier as read
 from module_ABR import arbre
 import datetime
 from time import sleep
+from PIL import ImageTk, Image
 
 
 class morpion:
@@ -30,6 +31,18 @@ class morpion:
         self.root.title("Morpion")
 
         self.turn = "J1" # on met le premier jouer comme étant J1 de base
+        # on définit les préférences enregistrées dans le fichier preferences.txt
+        """
+        ajouter un fichier de préférence avec:
+            symboles X                      les images sont copier_coller dans un fichier symbole
+            symbole O
+            couleur de fond
+            couleur barre de chargement
+            couleur fond plateau de jeu
+            couleur trait plateau de jeu
+        """
+        self.X = "X"
+        self.O = "O"
 
         def turn(player):
             """
@@ -43,6 +56,48 @@ class morpion:
             else:
                 self.premier = False
 
+        def choice(signe):
+            fichier = filedialog.askopenfilename(initialdir = "bibliotheque_images/",title = "Select file",filetypes = (("PNG files", "*.png"), ("jpeg files", "*.jpg"), ("all files", "*.*")))
+            img = Image.open(fichier)
+
+            if messagebox.askokcancel("Validation", "Êtes-vous sûr de vouloir utiliser cette image ? (%s)" %(fichier)):
+                nouv_nom = "bibliotheque_images/" + fichier.split("/")[-1]
+                if nouv_nom not in fichier:
+                    read.mouv_fichier(fichier, nouv_nom)
+
+                img = Image.open(nouv_nom)
+                coeff = max(img.size) / 80
+                resolution = (int(img.size[0] / coeff), int(img.size[1] / coeff))
+                img = img.resize(resolution, Image.ANTIALIAS)
+                img = ImageTk.PhotoImage(img)
+
+                if signe == "X":
+                    self.X = img
+                else:
+                    self.O = img
+
+        def see(signe):
+            visualisation = Toplevel(self.root)
+            visualisation.title(signe)
+
+            Label(visualisation, text = "Visualisation du signe : %s" %(signe)).pack()
+            cadre = Canvas(visualisation, width = 100, height = 100, bg = "white")
+
+            if signe == "X":
+                if self.X == "X":
+                    cadre.create_line(15, 15, 85, 85)
+                    cadre.create_line(85, 15, 15, 85)
+                else:
+                    cadre.create_image(50, 50, image = self.X)
+            else:
+                if self.O == "O":
+                    cadre.create_oval(15, 15, 85, 85)
+                else:
+                    cadre.create_image(50, 50, image = self.O)
+
+            cadre.pack()
+            visualisation.mainloop()
+
         # on crée une barre de Menu
         menubar = Menu(self.root)
 
@@ -51,6 +106,21 @@ class morpion:
         tour.add_radiobutton(label = "Joueur 1", command = lambda x=None: turn("J1"))
         tour.add_radiobutton(label = "IA/ Joueur 2", command = lambda x=None: turn("J2"))
         menubar.add_cascade(label = "Tour", menu = tour)
+
+        symbole = Menu(menubar, tearoff = 0)
+        # options pour X
+        symbole_X = Menu(symbole, tearoff = 0)
+        symbole_X.add_command(label = "Choisir", command = lambda x=None: choice("X"))
+        symbole_X.add_command(label = "Visualiser", command = lambda x=None: see("X"))
+        # options pour O
+        symbole_O = Menu(symbole, tearoff = 0)
+        symbole_O.add_command(label = "Choisir", command = lambda x=None: choice("O"))
+        symbole_O.add_command(label = "Visualiser", command = lambda x=None: see("O"))
+        # on ajoute les sous menus
+        symbole.add_cascade(label = "1er pion : X", menu = symbole_X)
+        symbole.add_cascade(label = "2er pion : O", menu = symbole_O)
+
+        menubar.add_cascade(label = "Selection symbole", menu = symbole)
 
         self.root.config(menu = menubar)
 
@@ -127,6 +197,7 @@ class morpion:
                     read.add_fichier("enregistrements", nouv_nom + ".txt", self.log_contenu) # on ajoute le fichier avec le nom choisi
                 else:
                     read.add_fichier("enregistrements", nom + ".txt", self.log_contenu) # sinon on ajoute le fichier avec le nom selectionnez
+
                 self.lancement() # on relance l'interface principale du jeu
             else: # la partie n'est donc pas finie
                 self.coup(event) # on joue avec l'emplacement du clic
@@ -328,14 +399,21 @@ class morpion:
             """
             sous-fonction permettant de placer un X sur le plateau visible à la position souhaiter sur le plateau digital
             """
-            self.jeu.create_line(x*100 +15, y*100 +15, x*100 +85, y*100 +85)
-            self.jeu.create_line(x*100 +85, y*100 +15, x*100 +15, y*100 +85)
+            if self.X == "X":
+                self.jeu.create_line(x*100 +15, y*100 +15, x*100 +85, y*100 +85)
+                self.jeu.create_line(x*100 +85, y*100 +15, x*100 +15, y*100 +85)
+            else:
+                self.jeu.create_image(x*100 +50, y*100 +50, image = self.X)
+
 
         def O(x, y):
             """
             sous-fonction permettant de placer un O sur le plateau visible à la position souhaiter sur le plateau digital
             """
-            self.jeu.create_oval(x*100 +15, y*100 +15, x*100 +85, y*100 +85)
+            if self.O == "O":
+                self.jeu.create_oval(x*100 +15, y*100 +15, x*100 +85, y*100 +85)
+            else:
+                self.jeu.create_image(x*100 +50, y*100 +50, image = self.O)
 
         # on place le pion sur le plateau visible en fonction de la personne qui joue et en fonction de si J1 et premier ou non
         # puis on change le tour du joueur
@@ -900,17 +978,17 @@ class IA_2:
 
             self.reflexion = plateau_actuel
 
-        if self.compter_caracteres(self.reflexion, "2") == self.compter_caracteres(self.reflexion, "1"):
+        if compter_caracteres(self.reflexion, "2") == compter_caracteres(self.reflexion, "1"):
             choix = negamax_2(self.brain, self.reflexion, -1)
         else:
             choix = negamax_2(self.brain, self.reflexion, 1)
 
-        if choix[1] < 1 and len(self.brain[self.reflexion]) < self.compter_caracteres(self.reflexion, "0"):
+        if choix[1] < 1 and len(self.brain[self.reflexion]) < compter_caracteres(self.reflexion, "0"):
             rang = 0
             while rang < len(self.reflexion):
                 if self.reflexion[rang] == "0":
                     futur = self.reflexion
-                    if self.compter_caracteres(self.reflexion, "2") == self.compter_caracteres(self.reflexion, "1"):
+                    if compter_caracteres(self.reflexion, "2") == compter_caracteres(self.reflexion, "1"):
                         futur = futur[:rang] + "1" + futur[rang+1:]
                     else:
                         futur = futur[:rang] + "2" + futur[rang+1:]
@@ -950,8 +1028,8 @@ class IA_2:
         """
         plateau_fin = self.plateau_conversion_chaine(plateau)
 
-        nbr_1 = self.compter_caracteres(plateau_fin, "1")
-        nbr_2 = self.compter_caracteres(plateau_fin, "2")
+        nbr_1 = compter_caracteres(plateau_fin, "1")
+        nbr_2 = compter_caracteres(plateau_fin, "2")
         if gagnant == "IA":
             if nbr_1 == nbr_2: # je suis les 2
                 gain = 1
@@ -1013,21 +1091,6 @@ class IA_2:
                     nbr += "0"
         return nbr
 
-    def compter_caracteres(self, situation, caracteres):
-        """
-        fonction permettant de compter le nombre de positions possibles pour le prochain pion dans un jeu de morpion.
-        C'est-à-dire qu'elle compte le nombre de 0 dans une chaine de caracteres
-        parametres:
-            situation, une chaine de caracteres représentant le plateau, voir fonction convertion_plateau(plateau)
-        renvoie le nombre de possibilité (de cases vides) du plateau.
-        """
-        assert type(situation) == str, "situation doit être une chaine de caracteres"
-
-        compteur = 0
-        for i in situation:
-            if i == caracteres:
-                compteur += 1
-        return compteur
 
 def negamax_2(dico, valeur, color, chemin = True):
     """
@@ -1049,7 +1112,7 @@ def negamax_2(dico, valeur, color, chemin = True):
         sous_chemin = None
         value = -999999999
         for fils in dico[valeur]:
-            if cpt_0(fils) < cpt_0(valeur):
+            if compter_caracteres(fils, "0") < compter_caracteres(valeur, "0"):
                 v = -negamax_2(dico, fils, -color, False)
                 if value < v:
                     value = v
@@ -1060,12 +1123,22 @@ def negamax_2(dico, valeur, color, chemin = True):
         else:
             return value
 
-def cpt_0(chaine):
-    cpt = 0
-    for i in chaine:
-        if i == "0":
-            cpt += 1
-    return cpt
+
+def compter_caracteres(situation, caracteres):
+    """
+    fonction permettant de compter le nombre de positions possibles pour le prochain pion dans un jeu de morpion.
+    C'est-à-dire qu'elle compte le nombre de 0 dans une chaine de caracteres
+    parametres:
+        situation, une chaine de caracteres représentant le plateau, voir fonction convertion_plateau(plateau)
+    renvoie le nombre de possibilité (de cases vides) du plateau.
+    """
+    assert type(situation) == str, "situation doit être une chaine de caracteres"
+
+    compteur = 0
+    for i in situation:
+        if i == caracteres:
+            compteur += 1
+    return compteur
 
 if __name__ == "__main__":
     morpion()
