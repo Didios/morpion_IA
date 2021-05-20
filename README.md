@@ -10,3 +10,5 @@ Dévellopé en python
 version 3.8.5
 Sur l'IDE PyScripter
 version 4.0
+
+Afin d'obtenir la version finale, lancer main_definitif.py
