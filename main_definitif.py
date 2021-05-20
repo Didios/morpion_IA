@@ -769,7 +769,7 @@ def compter_caracteres(chaine, caractere):
 
     compteur = 0 # on initialise le compteur a 0
     for i in chaine: # pour chaque caractere dans 'chaine'
-        if i == caracteres: # si le caractere vu et celui que l'on cherche
+        if i == caractere: # si le caractere vu et celui que l'on cherche
             compteur += 1 # on incrémente le compteur de 1
 
     return compteur # on renvoie le nombre d'occurrences trouvé
