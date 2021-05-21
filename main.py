@@ -326,12 +326,7 @@ class morpion:
                 else:
                     ordi.fin_partie(self.plateau, "NUL")
                     ordi_2.fin_partie(self.plateau, "NUL")
-                """
-                probleme de freeze du au fait que tkinter fonctionne avec des mainloop
-                ce qui empeche la barre de progression de se mettre à jour tant que la boucle n'est pas finie
 
-                utilisation de update pour régler le probleme
-                """
                 # on met à jour les informations de progression
                 pourcentage = round(100*r/repet, 2) # on arrondit le chiffre de pourcentage à 2 décimal (comme le calcul renvoie un flottant, on évite qu'il y ait trop de décimal affiché)
                 progression.configure(text = str(pourcentage) + "% effectué")
