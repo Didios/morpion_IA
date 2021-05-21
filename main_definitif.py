@@ -1,6 +1,7 @@
 #-------------------------------------------------------------------------------
-# Name:        interface finale morpion IA
+# Name:        morpion IA
 # Purpose:     donner au morpion sur console une interface
+#              Créer une interface permettant de jouer au morpion entre 2 humain ou bien contre la machine
 #
 # Author:      Didier Mathias
 #
@@ -673,7 +674,7 @@ class IA_2:
             else: # sinon, l'IA joue les O
                 gain = -1 # le gain est de -1
         else: # sinon, c'est une partie nul
-            gain = 0 # donc le gain est de 0
+            gain = -1
 
         if plateau_fin != self.reflexion: # si le plateau actuel n'est pas celui dans lequel on réfléchit
             if plateau_fin not in self.brain[self.reflexion]: # si la plateau actuel n'est pas dans les situations possibles pour ma réfléxion
