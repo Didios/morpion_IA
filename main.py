@@ -9,9 +9,10 @@
 #-------------------------------------------------------------------------------
 
 # importation des modules
-from tkinter import Tk, Canvas, Button, Menu, Scale, Label, Radiobutton, StringVar, filedialog, messagebox, Toplevel
+# on importe que les sous-modules nécessaires afin de ne pas importer l'intégralité de la bibliothèque
+from tkinter import Tk, Canvas, Button, Menu, Scale, Label, filedialog, messagebox, Toplevel
 import module_lecture_fichier as read
-import datetime
+from datetime import datetime
 from time import sleep
 from PIL import ImageTk, Image
 
@@ -177,7 +178,7 @@ class morpion:
         méthode permettant d'éxécuter un morpion entre 2 humain
         """
         # on met les premières informations dans le log, soit la date et le type de partie
-        date = datetime.datetime.now()
+        date = datetime.now()
         self.log_contenu += "Partie du %d/%d/%d\n" %(date.day, date.month, date.year) # la date
         self.log_contenu += "à %d:%d:%d\n" %(date.hour, date.minute, date.second) # l'heure exacte
         self.log_contenu += "Partie Humain VS Humain\n\n" # le type de partie
@@ -214,7 +215,7 @@ class morpion:
         elle devient donc de plus en plus forte au fur et à mesure des parties
         """
         # on met les premières informations dans le log
-        date = datetime.datetime.now() # on utilise le module datetime afin de conna^tre la date actuel exacte
+        date = datetime.now() # on utilise le module datetime afin de conna^tre la date actuel exacte
         self.log_contenu += "Partie du %d/%d/%d\n" %(date.day, date.month, date.year) # la date
         self.log_contenu += "à %d:%d:%d\n" %(date.hour, date.minute, date.second) # l'heure
         self.log_contenu += "Partie Humain VS IA\n\n" # le type de partie
