@@ -610,19 +610,66 @@ class IA_2:
 
         if choix[1] < 1 and len(self.brain[self.reflexion]) < compter_caracteres(self.reflexion, "0"): # si le meilleure chose à faire est de perdre ET que toutes les situations possibles n'ont pas été explorées
             # alors, on joue une nouvelle situation pour essayer de gagner
-            rang = 0 # indice permettant de déterminer quel coup n'as pas encore été fait
-            while rang < len(self.reflexion): # tant que tout le plateau n'as pas été parcoure
-                if self.reflexion[rang] == "0": # si la position actuelle est vide
-                    futur = self.reflexion # on crée une supposition du futur plateau
-                    if compter_caracteres(self.reflexion, "2") == compter_caracteres(self.reflexion, "1"): # s'il y a autant de X que de O, cela signifie qu'il faudrat jouer O
-                        futur = futur[:rang] + "1" + futur[rang+1:] # on change l'emplacement dans le futur avec un X
-                    else: # sinon
-                        futur = futur[:rang] + "2" + futur[rang+1:] # on change l'emplacement choisit dans le futur par un O
+            """
+            tentative de choix intelligent
 
-                    if futur not in self.brain[self.reflexion]: # si la situation fitur supposé n'as pas encore été faite
-                        break # on casse la boucle puisque son objectif est accompli
+            futur_max = ["", 0, 0]
+            rang = 0
+            while rang < len(self.reflexion):
+                if self.reflexion[rang] == "0":
+                    futur = self.reflexion
+                    if compter_caracteres(self.reflexion, "2") == compter_caracteres(self.reflexion, "1"):
+                        futur = futur[:rang] + "1" + futur[rang+1:]
+                        pion = "1"
+                        not_pion = "2"
+                    else:
+                        futur = futur[:rang] + "2" + futur[rang+1:]
+                        pion = "2"
+                        not_pion = "1"
 
-                rang += 1 # on incrémente l'indice de 1
+                    if futur not in self.brain[self.reflexion]:
+                        score = 0
+                        liste = [futur[0:3],
+                            futur[3:6],
+                            futur[6:],
+                            futur[0] + futur[3] + futur[6],
+                            futur[1] + futur[4] + futur[7],
+                            futur[2] + futur[5] + futur[8],
+                            futur[0] + futur[4] + futur[8],
+                            futur[2] + futur[4] + futur[6]]
+                        print(liste)
+                        for alignement in liste:
+                            if "0" in alignement:
+                                if compter_caracteres(alignement, pion) == 2:
+                                    score += 4
+                                elif compter_caracteres(alignement, not_pion) == 2:
+                                    score -= 4
+                                elif compter_caracteres(alignement, pion) == 1 and compter_caracteres(alignement, not_pion) == 0:
+                                    score += 3
+                                elif compter_caracteres(alignement, not_pion) == 1 and compter_caracteres(alignement, pion) == 0:
+                                    score -= 2
+                        if score > futur_max[1]:
+                            futur_max = [futur, score, rang]
+
+            if futur_max != ["", 0, 0]:
+                rang = futur_max[2]
+            """
+            decider = False
+            liste_coup = [4, 0, 8, 6, 2, 2, 7, 1, 5] # la liste des coup à faire en priorité
+
+            # on détermine le pion que doit jouer l'IA
+            if compter_caracteres(self.reflexion, "2") == compter_caracteres(self.reflexion, "1"):
+                pion = "1"
+            else:
+                pion = "2"
+
+            i = 0 # indice permettant de parcourir la liste des coups
+            while not decider:
+                rang = liste_coup[i]
+                futur = self.reflexion[:rang] + pion + self.reflexion[rang+1:]
+                if self.reflexion[rang] == "0" and futur not in self.brain[self.reflexion]:
+                    decider = True
+                i += 1
 
             # on transforme l'indice rang en positions x et y sur un plateau normal
             x = rang % 3
@@ -631,7 +678,7 @@ class IA_2:
             self.brain[self.reflexion] += [futur] # on ajoute la position choisit au coup possible
 
             if futur not in self.brain.keys(): # si le coup choisit est une toute nouvelle situation
-                self.brain[futur] = [] # on crée cette ssituation dans le cerveau
+                self.brain[futur] = [] # on crée cette situation dans le cerveau
 
             self.reflexion = futur # on place la réflexion dans ce nouveau plateau
         else: # sinon, on joue le coup chosit
