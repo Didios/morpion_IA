@@ -148,10 +148,10 @@ class morpion:
         self.turn = "J1" # le joueur qui commence la partie
         self.premier = True # si J1 commence
         self.fin = False # si la partie est finie
-
         # on affiche les différents choix de partie
         Button(self.root, text = "Humain VS Humain", command = self.partie_humaine, width = 20, height = 5).pack()
-        Button(self.root, text = "Humain VS IA", command = self.partie_IA_renforcement, width = 20, height = 5).pack()
+        Button(self.root, text = "Humain VS IA\nA evaluation des possibilité", command = self.partie_IA, width = 20, height = 5).pack()
+        Button(self.root, text = "Humain VS IA\nA renforcement", command = self.partie_IA_renforcement, width = 20, height = 5).pack()
         Button(self.root, text = "IA VS IA", command = self.entrainement, width = 20, height = 5).pack()
 
     def dessiner_plateau(self):
@@ -218,7 +218,7 @@ class morpion:
         date = datetime.now() # on utilise le module datetime afin de conna^tre la date actuel exacte
         self.log_contenu += "Partie du %d/%d/%d\n" %(date.day, date.month, date.year) # la date
         self.log_contenu += "à %d:%d:%d\n" %(date.hour, date.minute, date.second) # l'heure
-        self.log_contenu += "Partie Humain VS IA\n\n" # le type de partie
+        self.log_contenu += "Partie Humain VS IA_2\n\n" # le type de partie
 
         self.vider_root("Menu") # on enlève le contenu de la fenêtre
 
@@ -347,6 +347,131 @@ class morpion:
         repetitions.pack()
 
         Button(self.root, text = "GO !", command = entrainement_go).pack() # on met un bouton afin de lancer l'entrainement une fois le nombre choisit
+
+
+    def partie_IA(self):
+        """
+        méthode permettant de faire une partie contre une IA à renforcement, elle apprend avec les parties précédentes joué
+        elle devient donc de plus en plus forte au fur et à mesure des parties
+        """
+        # on met les premières informations dans le log
+        date = datetime.now() # on utilise le module datetime afin de conna^tre la date actuel exacte
+        self.log_contenu += "Partie du %d/%d/%d\n" %(date.day, date.month, date.year) # la date
+        self.log_contenu += "à %d:%d:%d\n" %(date.hour, date.minute, date.second) # l'heure
+        self.log_contenu += "Partie Humain VS IA_1\n\n" # le type de partie
+
+        self.vider_root("Menu") # on enlève le contenu de la fenêtre
+
+        self.dessiner_plateau() # on crée le plateau de jeu
+
+        def coup_IA(plateau):
+            """
+            sous-fonction permettant de faire jouer une IA qui ne se base que sur la situation actuelle du plateau
+            parametres:
+                plateau, une matrice qui est la représentation digitale du plateau
+            renvoie les position y, x du coup à jouer
+            """
+            # on convertit la matrice en une chaine de caracteres
+            # on transforme la matrice en simple liste
+            p = []
+            for i in plateau:
+                p += i
+
+            # on transforme la liste en chaine de caracteres
+            plateau_chaine = ""
+            for i in p:
+                if i == "X":
+                    plateau_chaine += "1"
+                elif i == "O":
+                    plateau_chaine += "2"
+                else:
+                    plateau_chaine += "0"
+
+            plateau = plateau_chaine
+
+            futur_max = [-999999999, 0] # on initialise un futur possible avec un score très bas, de sorte qu'elle soit changé
+
+            rang = 0 # on initialise l'indice à 0
+            while rang < len(plateau): # tant qu'on n'as pas parcouru tout les placements du terrain existant
+                if plateau[rang] == "0": # si l'emplacement observé est vide
+
+                    futur = plateau # on initialise un futur possible comme étant la réflexion actuelle
+
+                    # on détermine le pion a joué
+                    if compter_caracteres(plateau, "2") == compter_caracteres(plateau, "1"): # s'il y a autant de X que de O, alors on joue X
+                        pion = "1"
+                        not_pion = "2"
+                    else: # sinon, on joue O
+                        pion = "2"
+                        not_pion = "1"
+
+                    futur = futur[:rang] + pion + futur[rang+1:] # on remplit l'emplacement avec le pion a joué, ce qui définit un futur possible
+                    score = 0 # on initialise le score de la situation future à 0
+
+                    # on liste toutes les possibilité d'alignement
+                    liste = [futur[0:3], # 1er ligne
+                        futur[3:6], # 2e ligne
+                        futur[6:], # 3e ligne
+                        futur[0] + futur[3] + futur[6], # 1e colonne
+                        futur[1] + futur[4] + futur[7], # 2e colonne
+                        futur[2] + futur[5] + futur[8], # 3e colonne
+                        futur[0] + futur[4] + futur[8], # 1e diagonale
+                        futur[2] + futur[4] + futur[6] # 2e diagonale
+                        ]
+
+                    for alignement in liste: # on observe chaque alignement possible listés dans liste
+                        if "0" in alignement: # si l'alignement possède une place vide, cela signifie que l'on peut y joué
+                            if compter_caracteres(alignement, pion) == 2: # s'il y a 2 pions nous appartenant
+                                score += 4 # cela signifie que l'on peut gagner, on incrémente le score de 4
+                            elif compter_caracteres(alignement, not_pion) == 2: # s'il y a 2 pions adverse, cela signifie que l'adversaire pourrait gagner
+                                score -= 4 # cela signifie que l'adversaire peut gagner, on décrémente le score de 4
+                            elif compter_caracteres(alignement, pion) == 1 and compter_caracteres(alignement, not_pion) == 0: # s'il y a 1 de nos pions et qu'il n'y a aucun pion adverse
+                                score += 3 # cela signifie que l'on a une possibilité de gagner, on augmente le score de 3
+                            elif compter_caracteres(alignement, not_pion) == 1 and compter_caracteres(alignement, pion) == 0: # s'il y a 1 pion adverse et aucun de nos pions
+                                score -= 2 # cela signifie que l'adversaire a une possibilité de victoire
+
+                    if score > futur_max[0]: # si la score du futur observé est le meilleur score trouvé
+                        futur_max = [score, rang] # on change la situation futur sélectionné pour celle choisi : [situation_futur, son_score, l_indice_de_l_emplacement_a_jouer]
+
+                rang += 1 # on incrémente le rang de 1 pour passé au cas suivant
+
+            rang = futur_max[1] # on met le rang final qui a été choisi
+
+            # on transforme l'indice rang en positions x et y sur un plateau normal
+            x = rang % 3
+            y = rang // 3
+
+            # on renvoi la position trouvé
+            return [y, x]
+
+        def action(event):
+            """
+            sous-fonction permettant de jouer ou de retourner à l'écran titre selon le déroulement de la partie
+            parametres:
+                event, un event souris de clic
+            """
+            if self.fin: # si la partie est finie
+                nom = "log_%s-%s-%s" %(date.day, date.month, date.year) # on détermine le nom de fichier de base pour le log (log_jour-mois-année)
+
+                i = 0 # i sert d'indice pour déterminer qu'elle nom de fichier n'est pas déjà pris
+                while read.fichier_existe("enregistrements/%s(%d).txt" %(nom, i)): # tant que le nom de fichier avec l'indice existe déjà
+                    i += 1 # on incrémente l'indice de 1
+
+                read.add_fichier("enregistrements", "%s(%d).txt" %(nom, i), self.log_contenu) # on ajoute le fichier avec ce qu'il contient
+
+                self.lancement() # on relance le jeu
+            else: # sinon, la partie est en cours
+                if self.turn == "J1": # si c'est à J1 de jouer
+                    if self.coup(event) != "": # si le coup souhaiter par J1 est possible, ainsi, on évite à l'IA de jouer 2 fois d'affiler si le joueur clique au maivais endroit
+                        self.coup(event) # on exécute ce coup
+                        if not self.fin: # si la partie n'est pas fini
+                            self.coup(coup_IA(self.plateau)) # on fait jouer l'IA
+                else: # sinon, c'est à l'IA de jouer
+                    self.coup(coup_IA(self.plateau)) # on fait jouer l'IA
+
+        # on lance la partie en affichant le plateau et en mettant une action au clic du joueur
+        self.jeu.bind("<1>", action)
+        self.jeu.pack()
 
     def vider_root(self, *epargner):
         """
@@ -603,10 +728,20 @@ class IA_2:
 
             self.reflexion = plateau_actuel # on déplace la réflexion de l'IA vers le plateau actuel
 
+        """
         if compter_caracteres(self.reflexion, "2") == compter_caracteres(self.reflexion, "1"): # s'il y a autant de X que de O sur le plateau
             choix = negamax_2(self.brain, self.reflexion, -1) # on doit réfléchir ainsi
         else: # sinon
             choix = negamax_2(self.brain, self.reflexion, 1) # on doit réfléchir ainsi
+        """
+        print("Coup possible :")
+        print(self.brain[self.reflexion])
+        if compter_caracteres(self.reflexion, "2") == compter_caracteres(self.reflexion, "1"): # s'il y a autant de X que de O sur le plateau
+            choix = negamax_modifier(self.brain, self.reflexion, -1)
+        else: # sinon
+            choix = negamax_modifier(self.brain, self.reflexion, 1)
+        print("Coup realisé :")
+        print(choix)
 
         if choix[1] < 1 and len(self.brain[self.reflexion]) < compter_caracteres(self.reflexion, "0"): # si le meilleure chose à faire est de perdre ET que toutes les situations possibles n'ont pas été explorées
             # alors, on joue une nouvelle situation pour essayer de gagner
@@ -790,6 +925,30 @@ def negamax_2(dico, valeur, coeff, chemin = True):
             return value # on renvoie le score finale atteignable
 
 
+def negamax_modifier_2(dico, fils, coeff):
+    if type(dico[fils]) is int:
+        return dico[fils] * coeff
+
+    score = 0
+    for f in dico[fils]:
+        score -= negamax_modifier_2(dico, f, -coeff)
+
+    return score
+
+def negamax_modifier(dico, fils, coeff):
+    if dico[fils] == []:
+        return ["", -1]
+
+    chemin = ""
+    max_score = -99999999999
+    for f in dico[fils]:
+        score = -negamax_modifier_2(dico, f, -coeff)
+        if score > max_score:
+            max_score = score
+            chemin = f
+
+    return [chemin, max_score]
+
 def compter_caracteres(chaine, caractere):
     """
     fonction permettant de compter le nombre d'occurences d'un caractere dans une chaine de caracteres
@@ -806,6 +965,7 @@ def compter_caracteres(chaine, caractere):
             compteur += 1 # on incrémente le compteur de 1
 
     return compteur # on renvoie le nombre d'occurrences trouvé
+
 
 
 if __name__ == "__main__": # si on éxécute ce script directement
